@@ -34,3 +34,11 @@ build/
 
 ### Codex agent working file ###
 .codex
+
+### AI tool temporary files ###
+.claude/
+.cursor/
+.windsurf/
+.aider*
+*.tmp
+*.temp
