@@ -1,15 +1,14 @@
 # international-iam-platform
 
-`international-iam-platform` is a public portfolio project for a Spring Boot based identity and access management platform. Phase 1 establishes a clean baseline only: project structure, local dependencies, documentation, and a simple health check.
+`international-iam-platform` is a public portfolio project for a Spring Boot based identity and access management platform. The current baseline establishes project structure, local dependencies, documentation, a simple health check, and the first persistence model for core IAM concepts.
 
-IAM business features are intentionally out of scope for this phase. User, tenant, role, permission, OAuth2, MFA, and SCIM logic will be added later.
+IAM business features are intentionally out of scope for the current phase. Authentication, login, OAuth2 flows, authorization checks, MFA, SCIM, service-layer workflows, and REST APIs for IAM entities will be added later.
 
 ## Tech Stack
 
 - Java 21
 - Spring Boot 3.5
 - Spring Web
-- Spring Security
 - Spring Data JPA
 - Spring Data Redis
 - Spring Modulith
@@ -27,6 +26,25 @@ Required tools:
 - Git
 
 The project uses the Maven Wrapper, so a local Maven installation is not required.
+
+## Current Domain Model
+
+The Phase 2 model defines JPA entities only. It does not implement business logic, controllers, DTOs, repositories, authentication, or authorization flows.
+
+- `Tenant`: an organization or customer boundary.
+- `User`: an account principal that belongs to one tenant.
+- `Client`: an OAuth2 client registration shell that belongs to one tenant.
+- `Role`: a named access grouping assignable to users.
+- `Permission`: a named capability assignable to roles.
+
+Relationships:
+
+- A `User` belongs to one `Tenant`.
+- A `Client` belongs to one `Tenant`.
+- A `User` can have multiple `Role` entries.
+- A `Role` can have multiple `Permission` entries.
+
+All domain entities use UUID primary keys and basic timestamp metadata.
 
 ## Start Local Dependencies
 
@@ -80,8 +98,8 @@ Expected response:
 
 ## Roadmap
 
-- Phase 1: Clean public baseline, documentation, local dependencies, and health check.
-- Phase 2: Domain model and persistence boundaries for core IAM concepts.
+- Phase 1: Clean public baseline, documentation, local dependencies, and health check. Done.
+- Phase 2: Domain model and persistence boundaries for core IAM concepts. In progress.
 - Phase 3: Authentication and authorization flows.
 - Phase 4: Multi-tenancy, role, and permission management.
 - Phase 5: OAuth2 authorization server hardening.

@@ -2,9 +2,9 @@ services:
   postgres:
     image: 'postgres:16.9-alpine'
     environment:
-      - 'POSTGRES_DB=international_iam_platform'
-      - 'POSTGRES_PASSWORD=local_password'
-      - 'POSTGRES_USER=local_user'
+      - 'POSTGRES_DB=international_iam'
+      - 'POSTGRES_PASSWORD=admin'
+      - 'POSTGRES_USER=admin'
     ports:
       - '5432:5432'
   redis:
