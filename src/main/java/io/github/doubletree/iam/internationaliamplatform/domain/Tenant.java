@@ -13,7 +13,7 @@ import java.util.UUID;
  * Tenant represents an isolated customer or organization boundary in the IAM platform.
  */
 @Entity
-@Table(name = "iam_tenants")
+@Table(name = "tenants")
 public class Tenant {
 
     @Id

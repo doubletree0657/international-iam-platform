@@ -20,7 +20,7 @@ import java.util.UUID;
  * User represents a human or account principal that belongs to one tenant.
  */
 @Entity
-@Table(name = "iam_users")
+@Table(name = "users")
 public class User {
 
     @Id
@@ -43,7 +43,7 @@ public class User {
 
     @ManyToMany
     @JoinTable(
-            name = "iam_user_roles",
+            name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new LinkedHashSet<>();

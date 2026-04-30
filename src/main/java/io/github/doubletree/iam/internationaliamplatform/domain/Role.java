@@ -18,7 +18,7 @@ import java.util.UUID;
  * Role groups permissions so users can receive access through named assignments.
  */
 @Entity
-@Table(name = "iam_roles")
+@Table(name = "roles")
 public class Role {
 
     @Id
@@ -34,7 +34,7 @@ public class Role {
 
     @ManyToMany
     @JoinTable(
-            name = "iam_role_permissions",
+            name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissions = new LinkedHashSet<>();

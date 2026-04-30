@@ -16,7 +16,7 @@ import java.util.UUID;
  * Client represents an OAuth2 client registration owned by a tenant.
  */
 @Entity
-@Table(name = "iam_clients")
+@Table(name = "clients")
 public class Client {
 
     @Id

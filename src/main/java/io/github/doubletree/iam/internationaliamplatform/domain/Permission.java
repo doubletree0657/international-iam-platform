@@ -13,7 +13,7 @@ import java.util.UUID;
  * Permission represents a named capability that can be attached to roles.
  */
 @Entity
-@Table(name = "iam_permissions")
+@Table(name = "permissions")
 public class Permission {
 
     @Id
