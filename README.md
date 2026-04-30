@@ -34,13 +34,14 @@ The Phase 2 model defines JPA entities only. It does not implement business logi
 - `Tenant`: an organization or customer boundary.
 - `User`: an account principal that belongs to one tenant.
 - `Client`: an OAuth2 client registration shell that belongs to one tenant.
-- `Role`: a named access grouping assignable to users.
+- `Role`: a tenant-scoped access grouping assignable to users.
 - `Permission`: a named capability assignable to roles.
 
 Relationships:
 
 - A `User` belongs to one `Tenant`.
 - A `Client` belongs to one `Tenant`.
+- A `Role` belongs to one `Tenant`.
 - A `User` can have multiple `Role` entries.
 - A `Role` can have multiple `Permission` entries.
 
