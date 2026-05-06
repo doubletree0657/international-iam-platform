@@ -42,3 +42,6 @@ build/
 .aider*
 *.tmp
 *.temp
+
+### Local utility scripts ###
+scripts/git-push.sh
