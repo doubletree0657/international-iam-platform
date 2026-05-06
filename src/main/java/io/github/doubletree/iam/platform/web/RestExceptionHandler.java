@@ -1,6 +1,7 @@
 package io.github.doubletree.iam.platform.web;
 
 import io.github.doubletree.iam.platform.application.service.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.service.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.web.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,6 +16,12 @@ public class RestExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleEntityNotFound(EntityNotFoundException exception) {
         return new ErrorResponse("not_found", exception.getMessage());
+    }
+
+    @ExceptionHandler(TenantBoundaryViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleTenantBoundaryViolation(TenantBoundaryViolationException exception) {
+        return new ErrorResponse("tenant_boundary_violation", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

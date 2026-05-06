@@ -11,6 +11,7 @@ import io.github.doubletree.iam.platform.application.service.EntityNotFoundExcep
 import io.github.doubletree.iam.platform.application.service.PermissionApplicationService;
 import io.github.doubletree.iam.platform.application.service.RoleApplicationService;
 import io.github.doubletree.iam.platform.application.service.TenantApplicationService;
+import io.github.doubletree.iam.platform.application.service.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.application.service.UserApplicationService;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Permission;
@@ -193,6 +194,17 @@ class CoreIamControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("not_found"))
                 .andExpect(jsonPath("$.message").value("Tenant not found: " + TENANT_ID));
+    }
+
+    @Test
+    void crossTenantRoleAssignmentReturnsConflict() throws Exception {
+        when(userApplicationService.assignRoleToUser(eq(USER_ID), eq(ROLE_ID)))
+                .thenThrow(new TenantBoundaryViolationException("User and role must belong to the same tenant"));
+
+        mockMvc.perform(post("/api/users/{userId}/roles/{roleId}", USER_ID, ROLE_ID))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("tenant_boundary_violation"))
+                .andExpect(jsonPath("$.message").value("User and role must belong to the same tenant"));
     }
 
     @Test

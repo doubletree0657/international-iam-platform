@@ -103,7 +103,7 @@ Current completed work:
 
 Current phase:
 
-- **Phase 6 — REST API Layer: Done**
+- **Phase 6.5 — Tenant Boundary Validation: Done**
 
 Next phase:
 
@@ -206,6 +206,18 @@ Goal:
 - Add validation
 - Add basic error handling
 - Keep APIs unauthenticated at first for development simplicity
+
+---
+
+### Phase 6.5 — Tenant Boundary Validation
+
+Status: Done
+
+Goal:
+
+- Prevent cross-tenant role assignment
+- Keep tenant boundary checks in the application service layer
+- Prepare safer domain behavior before OAuth2 work
 
 ---
 

@@ -41,6 +41,10 @@ public class UserApplicationService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleId));
 
+        if (!user.getTenant().getId().equals(role.getTenant().getId())) {
+            throw new TenantBoundaryViolationException("User and role must belong to the same tenant");
+        }
+
         user.getRoles().add(role);
         return userRepository.save(user);
     }

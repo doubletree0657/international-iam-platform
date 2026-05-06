@@ -1,6 +1,7 @@
 package io.github.doubletree.iam.platform.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Permission;
@@ -129,6 +130,21 @@ class ApplicationServiceTests {
         assertThat(loadedUser.getRoles())
                 .extracting(Role::getName)
                 .containsExactly("operator");
+    }
+
+    @Test
+    void shouldRejectAssigningRoleFromDifferentTenantToUser() {
+        Tenant userTenant = tenantApplicationService.createTenant("User Boundary Tenant");
+        Tenant roleTenant = tenantApplicationService.createTenant("Role Boundary Tenant");
+        User user = userApplicationService.createUser(userTenant.getId(), "mallory", "Mallory Example");
+        Role role = roleApplicationService.createRole(roleTenant.getId(), "external-admin");
+
+        assertThatThrownBy(() -> userApplicationService.assignRoleToUser(user.getId(), role.getId()))
+                .isInstanceOf(TenantBoundaryViolationException.class)
+                .hasMessage("User and role must belong to the same tenant");
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(loadedUser.getRoles()).isEmpty();
     }
 
     @Test
