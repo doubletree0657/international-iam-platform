@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.internationaliamplatform;
+package io.github.doubletree.iam.platform;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;

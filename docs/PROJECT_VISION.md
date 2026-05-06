@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 4 — Repository Layer and Persistence Tests: Done**
+- **Phase 5 — Application Service Boundary / Use Case Layer: Done**
 
 Next phase:
 
-- **Phase 5 — Application Service Boundary / Use Case Layer**
+- **Phase 6 — REST API Layer**
 
 ---
 
@@ -173,7 +173,7 @@ Goal:
 
 ### Phase 5 — Application Service Boundary / Use Case Layer
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -197,7 +197,7 @@ This phase should not implement authentication, OAuth2, RBAC enforcement, MFA, o
 
 ### Phase 6 — REST API Layer
 
-Status: Planned
+Status: Next
 
 Goal:
 

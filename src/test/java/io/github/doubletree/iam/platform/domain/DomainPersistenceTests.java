@@ -1,12 +1,12 @@
-package io.github.doubletree.iam.internationaliamplatform.domain;
+package io.github.doubletree.iam.platform.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.doubletree.iam.internationaliamplatform.repository.ClientRepository;
-import io.github.doubletree.iam.internationaliamplatform.repository.PermissionRepository;
-import io.github.doubletree.iam.internationaliamplatform.repository.RoleRepository;
-import io.github.doubletree.iam.internationaliamplatform.repository.TenantRepository;
-import io.github.doubletree.iam.internationaliamplatform.repository.UserRepository;
+import io.github.doubletree.iam.platform.repository.ClientRepository;
+import io.github.doubletree.iam.platform.repository.PermissionRepository;
+import io.github.doubletree.iam.platform.repository.RoleRepository;
+import io.github.doubletree.iam.platform.repository.TenantRepository;
+import io.github.doubletree.iam.platform.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

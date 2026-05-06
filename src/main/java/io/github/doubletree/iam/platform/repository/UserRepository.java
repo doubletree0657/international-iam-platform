@@ -1,6 +1,6 @@
-package io.github.doubletree.iam.internationaliamplatform.repository;
+package io.github.doubletree.iam.platform.repository;
 
-import io.github.doubletree.iam.internationaliamplatform.domain.User;
+import io.github.doubletree.iam.platform.domain.User;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

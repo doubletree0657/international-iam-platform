@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.internationaliamplatform.domain;
+package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,11 +10,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Tenant represents an isolated customer or organization boundary in the IAM platform.
+ * Permission represents a named capability that can be attached to roles.
  */
 @Entity
-@Table(name = "tenants")
-public class Tenant {
+@Table(name = "permissions")
+public class Permission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -27,7 +27,13 @@ public class Tenant {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
-    protected Tenant() {
+    protected Permission() {
+    }
+
+    public static Permission create(String name) {
+        Permission permission = new Permission();
+        permission.setName(name);
+        return permission;
     }
 
     public UUID getId() {

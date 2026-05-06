@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.internationaliamplatform.domain;
+package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,6 +38,14 @@ public class Client {
     private Instant createdAt = Instant.now();
 
     protected Client() {
+    }
+
+    public static Client create(Tenant tenant, String clientId, String name) {
+        Client client = new Client();
+        client.setTenant(tenant);
+        client.setClientId(clientId);
+        client.setName(name);
+        return client;
     }
 
     public UUID getId() {

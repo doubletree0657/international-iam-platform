@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.internationaliamplatform.domain;
+package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,38 +17,42 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * User represents a human or account principal that belongs to one tenant.
+ * Role groups permissions so users can receive access through named assignments.
  */
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "roles")
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false)
     private UUID id;
 
+    @Column(nullable = false)
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
-
-    @Column(nullable = false)
-    private String username;
-
-    @Column(nullable = false)
-    private String displayName;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     @ManyToMany
     @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new LinkedHashSet<>();
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id"))
+    private Set<Permission> permissions = new LinkedHashSet<>();
 
-    protected User() {
+    protected Role() {
+    }
+
+    public static Role create(Tenant tenant, String name) {
+        Role role = new Role();
+        role.setTenant(tenant);
+        role.setName(name);
+        return role;
     }
 
     public UUID getId() {
@@ -59,28 +63,20 @@ public class User {
         this.id = id;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Tenant getTenant() {
         return tenant;
     }
 
     public void setTenant(Tenant tenant) {
         this.tenant = tenant;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
     }
 
     public Instant getCreatedAt() {
@@ -91,11 +87,11 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public Set<Permission> getPermissions() {
+        return permissions;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setPermissions(Set<Permission> permissions) {
+        this.permissions = permissions;
     }
 }
