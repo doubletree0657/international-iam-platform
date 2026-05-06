@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 5 — Application Service Boundary / Use Case Layer: Done**
+- **Phase 6 — REST API Layer: Done**
 
 Next phase:
 
-- **Phase 6 — REST API Layer**
+- **Phase 7 — OAuth2 Authorization Server**
 
 ---
 
@@ -197,7 +197,7 @@ This phase should not implement authentication, OAuth2, RBAC enforcement, MFA, o
 
 ### Phase 6 — REST API Layer
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -211,7 +211,7 @@ Goal:
 
 ### Phase 7 — OAuth2 Authorization Server
 
-Status: Planned
+Status: Next
 
 Goal:
 
