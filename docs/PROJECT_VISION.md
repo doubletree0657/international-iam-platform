@@ -1,109 +1,427 @@
 # International IAM Platform — Project Vision
 
-## 1. Project Overview
+## 1. Overview
 
-This project is a public portfolio IAM (Identity and Access Management) platform designed to demonstrate modern backend engineering, security concepts, and system design.
+`international-iam-platform` is a public portfolio project that implements a modern IAM (Identity and Access Management) platform.
 
-It is NOT a copy of any company system and does not use any proprietary code or data.
+The project is designed for learning, engineering practice, and international job preparation.
 
-The goal is to build a clean, understandable, and production-inspired IAM system from scratch.
+It is not a copy of any company system and does not use proprietary source code, internal documents, customer configurations, or real production data.
+
+The goal is to build a clean, understandable, and production-inspired IAM system that can be explained clearly in interviews.
 
 ---
 
-## 2. Goals
+## 2. Project Goals
 
-* Improve modern Java backend skills (Java 21, Spring Boot 3)
-* Learn identity and access management concepts
-* Practice Docker-based local development
-* Gain CI/CD experience using GitLab
-* Build a strong international portfolio project
-* Improve technical English communication
+This project is built to demonstrate and improve:
+
+- Modern Java backend development
+- Spring Boot 3 application design
+- IAM domain modeling
+- Multi-tenant architecture
+- Authentication and authorization concepts
+- OAuth2 / OIDC understanding
+- RBAC design
+- Database migration and persistence testing
+- Docker-based local development
+- GitLab CI/CD practice
+- Technical English communication
 
 ---
 
 ## 3. Architecture
 
-The system follows a **modular monolith architecture**:
+The project follows a **modular monolith** architecture.
 
-* application
-* authentication
-* authorization
-* tenant
-* mfa
-* scim
-* audit
-* common
+It is not designed as microservices at the current stage.
 
-Each module is logically separated but runs in a single Spring Boot application.
+A modular monolith means:
+
+- one Spring Boot application
+- clear internal module boundaries
+- simple local development
+- easier testing and explanation
+- no early distributed-system complexity
+
+Target logical modules:
+
+- `application`
+- `authentication`
+- `authorization`
+- `tenant`
+- `mfa`
+- `scim`
+- `audit`
+- `common`
+
+The project may start with a simpler package structure and gradually evolve toward these modules.
 
 ---
 
 ## 4. Technology Stack
 
-* Java 21 (Java 17 fallback)
-* Spring Boot 3.5.x
-* Spring Security
-* Spring Authorization Server
-* PostgreSQL
-* Redis
-* Flyway
-* Testcontainers
-* Docker & Docker Compose
-* Maven Wrapper
-* GitHub (portfolio)
-* GitLab (CI/CD practice)
+Core stack:
+
+- Java 21
+- Spring Boot 3.5.x
+- Maven Wrapper
+- PostgreSQL
+- Redis
+- Flyway
+- Docker Compose
+- JUnit 5
+- Testcontainers
+
+Planned security stack:
+
+- Spring Security
+- Spring Authorization Server
+- OAuth2
+- OIDC
+- JWT
+
+Project platforms:
+
+- GitHub for public portfolio display
+- GitLab for CI/CD practice
 
 ---
 
-## 5. Development Principles
+## 5. Current Status
 
-* Start simple, evolve gradually
-* Avoid over-engineering
-* Do not introduce security complexity too early
-* Always design domain models before features
-* Every AI-generated change must be reviewed
-* Keep the system explainable in interviews
+Current completed work:
+
+- Project baseline
+- Docker Compose setup
+- Health check endpoint
+- Core IAM domain model
+- Flyway database migration
+- Tenant-scoped role design
+- Spring Data JPA repositories
+- Persistence tests with PostgreSQL Testcontainers
+
+Current phase:
+
+- **Phase 4 — Repository Layer and Persistence Tests: Done**
+
+Next phase:
+
+- **Phase 5 — Application Service Boundary / Use Case Layer**
 
 ---
 
 ## 6. MVP Roadmap
 
-1. Project baseline (done)
-2. Core domain model (current)
-3. Database migration (Flyway)
-4. OAuth2 Authorization Server
-5. OIDC / JWT
-6. RBAC
-7. Audit logging
-8. MFA (TOTP)
-9. SCIM APIs
-10. OpenAPI docs
-11. CI/CD pipeline
+### Phase 1 — Project Baseline
+
+Status: Done
+
+Goal:
+
+- Create the initial Spring Boot project
+- Add README
+- Add Docker Compose
+- Add health check endpoint
+- Verify local development environment
 
 ---
 
-## 7. Security Principles
+### Phase 2 — Core Domain Model
 
-* Never store secrets in plain text
-* Passwords must be hashed
-* Client secrets must be encrypted
-* Tokens must be handled carefully
-* Logs must not leak sensitive data
+Status: Done
+
+Goal:
+
+- Define the core IAM entities
+- Establish the basic identity and access model
+- Keep the model simple and explainable
+
+Core entities:
+
+- Tenant
+- User
+- Client
+- Role
+- Permission
 
 ---
 
-## 8. Non-Goals
+### Phase 3 — Database Migration
 
-* Not a production-ready system
-* Not a full enterprise IAM replacement
-* Not a clone of any existing product
+Status: Done
+
+Goal:
+
+- Introduce Flyway
+- Create the initial database schema
+- Keep database changes version-controlled
 
 ---
 
-## 9. Target Outcome
+### Phase 4 — Repository Layer and Persistence Tests
 
-A clean, well-structured IAM system that can be:
+Status: Done
 
-* Demonstrated in interviews
-* Explained clearly
-* Extended step-by-step
+Goal:
+
+- Add Spring Data JPA repositories
+- Verify entity mappings with PostgreSQL
+- Use Testcontainers for realistic persistence tests
+
+---
+
+### Phase 5 — Application Service Boundary / Use Case Layer
+
+Status: Next
+
+Goal:
+
+- Add minimal application services
+- Define clear use case boundaries
+- Prepare for future REST APIs and security integration
+
+Example use cases:
+
+- Create tenant
+- Create user
+- Create role
+- Assign role to user
+- Create permission
+- Assign permission to role
+- Create client
+
+This phase should not implement authentication, OAuth2, RBAC enforcement, MFA, or SCIM yet.
+
+---
+
+### Phase 6 — REST API Layer
+
+Status: Planned
+
+Goal:
+
+- Add basic REST APIs
+- Add DTOs
+- Add validation
+- Add basic error handling
+- Keep APIs unauthenticated at first for development simplicity
+
+---
+
+### Phase 7 — OAuth2 Authorization Server
+
+Status: Planned
+
+Goal:
+
+- Introduce Spring Authorization Server
+- Support registered clients
+- Prepare token issuing capability
+- Build the foundation for OAuth2 flows
+
+---
+
+### Phase 8 — OIDC / JWT
+
+Status: Planned
+
+Goal:
+
+- Add OIDC support
+- Add JWT support
+- Add JWK configuration
+- Define basic token claims
+
+---
+
+### Phase 9 — RBAC Authorization
+
+Status: Planned
+
+Goal:
+
+- Implement role-based access control
+- Evaluate permissions through user-role-permission relationships
+- Protect selected APIs with authorization rules
+
+---
+
+### Phase 10 — Audit Logging
+
+Status: Planned
+
+Goal:
+
+- Record important security and administration events
+- Support future troubleshooting and compliance-style explanations
+
+Example audit events:
+
+- user created
+- role assigned
+- permission changed
+- client created
+- authentication event
+
+---
+
+### Phase 11 — MFA
+
+Status: Planned
+
+Goal:
+
+- Add TOTP-based multi-factor authentication
+- Handle MFA enrollment and verification
+- Protect MFA secrets carefully
+
+---
+
+### Phase 12 — SCIM
+
+Status: Planned
+
+Goal:
+
+- Add basic SCIM-style identity provisioning APIs
+- Support Users
+- Support Groups if needed
+
+Group support is intentionally postponed until this stage or a later authorization-model expansion stage.
+
+---
+
+### Phase 13 — OpenAPI Documentation
+
+Status: Planned
+
+Goal:
+
+- Add OpenAPI documentation
+- Provide API contracts
+- Improve project readability for developers and interviewers
+
+---
+
+### Phase 14 — GitLab CI/CD
+
+Status: Planned
+
+Goal:
+
+- Add GitLab CI pipeline
+- Run tests automatically
+- Build application package
+- Build Docker image
+
+---
+
+## 7. Core Domain Design
+
+The current access model is:
+
+- Tenant owns Users
+- Tenant owns Roles
+- Tenant owns Clients
+- User has Roles
+- Role has Permissions
+
+Design decisions:
+
+- A user belongs to a tenant
+- A role belongs to a tenant
+- A client belongs to a tenant
+- Permissions are global for now
+- A user can have multiple roles
+- A role can have multiple permissions
+
+Group is not implemented yet.
+
+Possible future model:
+
+- User -> Group -> Role -> Permission
+- User -> Role -> Permission
+
+Group support is postponed to keep the MVP simple.
+
+---
+
+## 8. Development Principles
+
+The project should follow these principles:
+
+- Start simple and evolve gradually
+- Avoid over-engineering
+- Do not introduce security complexity too early
+- Design the domain model before implementing features
+- Verify important assumptions with tests
+- Keep the code explainable
+- Keep documentation synchronized with progress
+- Review AI-generated code before committing
+
+---
+
+## 9. Security Principles
+
+Security-sensitive features must be introduced carefully.
+
+Important rules:
+
+- Do not store passwords in plain text
+- Do not store client secrets in plain text
+- Do not log tokens, passwords, client secrets, or MFA secrets
+- Protect signing keys and secrets
+- Do not commit CI/CD secrets
+- Do not use real company or customer data
+
+---
+
+## 10. AI Development Rules
+
+This project uses AI-assisted development.
+
+Tool responsibilities:
+
+- ChatGPT: planning, architecture guidance, task breakdown, Codex prompts, learning rhythm
+- Codex: implementation of clear and limited tasks
+- Cursor: code explanation and learning support
+- GitHub: public portfolio display
+- GitLab: CI/CD practice
+
+Rules for Codex:
+
+- Follow this document before making changes
+- Work only on the current phase
+- Do not rewrite the project from scratch
+- Do not introduce unrelated technologies
+- Do not jump ahead to OAuth2, MFA, SCIM, Kubernetes, or cloud infrastructure
+- After completing a phase, update the roadmap status in this document
+
+---
+
+## 11. Non-Goals
+
+The project is currently not trying to be:
+
+- a production-ready IAM system
+- a full enterprise IAM replacement
+- a microservices system
+- a Kubernetes project
+- a cloud infrastructure project
+- a clone of any existing company product
+
+---
+
+## 12. Target Outcome
+
+The final project should be:
+
+- easy to run locally
+- easy to understand
+- easy to explain in interviews
+- structured like a real backend project
+- useful for discussing IAM design
+- useful for discussing backend architecture
+- useful for discussing security tradeoffs
+- suitable as an international portfolio project
