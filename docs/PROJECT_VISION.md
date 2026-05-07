@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 10 — Audit Logging: Done**
+- **Phase 11 — MFA: Done**
 
 Next phase:
 
-- **Phase 11 — MFA**
+- **Phase 12 — SCIM**
 
 ---
 
@@ -280,7 +280,7 @@ Example audit events:
 
 ### Phase 11 — MFA
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -292,7 +292,7 @@ Goal:
 
 ### Phase 12 — SCIM
 
-Status: Planned
+Status: Next
 
 Goal:
 

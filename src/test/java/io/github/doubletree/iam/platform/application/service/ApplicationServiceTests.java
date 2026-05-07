@@ -15,6 +15,8 @@ import io.github.doubletree.iam.platform.repository.PermissionRepository;
 import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
+import io.github.doubletree.iam.platform.web.dto.UserResponse;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -35,7 +37,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         RoleApplicationService.class,
         PermissionApplicationService.class,
         ClientApplicationService.class,
-        AuditApplicationService.class
+        AuditApplicationService.class,
+        MfaApplicationService.class
 })
 class ApplicationServiceTests {
 
@@ -56,6 +59,9 @@ class ApplicationServiceTests {
 
     @Autowired
     private ClientApplicationService clientApplicationService;
+
+    @Autowired
+    private MfaApplicationService mfaApplicationService;
 
     @Autowired
     private TenantRepository tenantRepository;
@@ -117,6 +123,91 @@ class ApplicationServiceTests {
         assertThat(loadedUser.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedUser.getUsername()).isEqualTo("alice");
         assertThat(loadedUser.getDisplayName()).isEqualTo("Alice Example");
+    }
+
+    @Test
+    void enrollingMfaGeneratesSecretAndEnablesMfa() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Enrollment Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "mfa-user", "MFA User");
+
+        MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(enrollment.userId()).isEqualTo(user.getId());
+        assertThat(enrollment.secret()).isNotBlank();
+        assertThat(loadedUser.isMfaEnabled()).isTrue();
+        assertThat(loadedUser.getMfaSecret()).isEqualTo(enrollment.secret());
+    }
+
+    @Test
+    void verifyingValidTotpCodeSucceeds() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Verify Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "verify-user", "Verify User");
+        MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
+        String code = mfaApplicationService.generateTotpCode(enrollment.secret(), Instant.now());
+
+        assertThat(mfaApplicationService.verifyTotp(user.getId(), code)).isTrue();
+    }
+
+    @Test
+    void verifyingInvalidTotpCodeFails() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Invalid Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "invalid-user", "Invalid User");
+        MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
+        String validCode = mfaApplicationService.generateTotpCode(enrollment.secret(), Instant.now());
+        String invalidCode = validCode.equals("000000") ? "000001" : "000000";
+
+        assertThat(mfaApplicationService.verifyTotp(user.getId(), invalidCode)).isFalse();
+    }
+
+    @Test
+    void disablingMfaClearsMfaState() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Disable Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "disable-user", "Disable User");
+        mfaApplicationService.enrollTotp(user.getId());
+
+        mfaApplicationService.disableTotp(user.getId());
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(loadedUser.isMfaEnabled()).isFalse();
+        assertThat(loadedUser.getMfaSecret()).isNull();
+    }
+
+    @Test
+    void recordsAuditEventsForMfaOperations() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Audit Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "audit-mfa-user", "Audit MFA User");
+        MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
+        String code = mfaApplicationService.generateTotpCode(enrollment.secret(), Instant.now());
+
+        mfaApplicationService.verifyTotp(user.getId(), code);
+        mfaApplicationService.disableTotp(user.getId());
+
+        assertThat(auditLogRepository.findByAction("MFA_ENROLLED"))
+                .singleElement()
+                .satisfies(auditLog -> {
+                    assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
+                    assertThat(auditLog.getResourceType()).isEqualTo("USER");
+                    assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
+                });
+        assertThat(auditLogRepository.findByAction("MFA_VERIFIED"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(user.getId()));
+        assertThat(auditLogRepository.findByAction("MFA_DISABLED"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(user.getId()));
+    }
+
+    @Test
+    void userResponseDoesNotExposeMfaSecret() {
+        Tenant tenant = tenantApplicationService.createTenant("MFA Response Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "response-user", "Response User");
+        MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+
+        UserResponse response = UserResponse.from(loadedUser);
+
+        assertThat(response.toString()).doesNotContain(enrollment.secret());
     }
 
     @Test
