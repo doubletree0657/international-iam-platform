@@ -3,11 +3,13 @@ package io.github.doubletree.iam.platform.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.doubletree.iam.platform.domain.AuditLog;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
+import io.github.doubletree.iam.platform.repository.AuditLogRepository;
 import io.github.doubletree.iam.platform.repository.ClientRepository;
 import io.github.doubletree.iam.platform.repository.PermissionRepository;
 import io.github.doubletree.iam.platform.repository.RoleRepository;
@@ -32,7 +34,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         UserApplicationService.class,
         RoleApplicationService.class,
         PermissionApplicationService.class,
-        ClientApplicationService.class
+        ClientApplicationService.class,
+        AuditApplicationService.class
 })
 class ApplicationServiceTests {
 
@@ -69,6 +72,9 @@ class ApplicationServiceTests {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Autowired
+    private AuditLogRepository auditLogRepository;
+
     @DynamicPropertySource
     static void registerDataSourceProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -84,6 +90,21 @@ class ApplicationServiceTests {
         Tenant loadedTenant = tenantRepository.findById(tenant.getId()).orElseThrow();
 
         assertThat(loadedTenant.getName()).isEqualTo("Acme");
+    }
+
+    @Test
+    void createsAuditLogWhenTenantIsCreated() {
+        Tenant tenant = tenantApplicationService.createTenant("Audit Tenant");
+
+        assertThat(auditLogRepository.findByAction("TENANT_CREATED"))
+                .singleElement()
+                .satisfies(auditLog -> {
+                    assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
+                    assertThat(auditLog.getActor()).isEqualTo("api-client");
+                    assertThat(auditLog.getResourceType()).isEqualTo("TENANT");
+                    assertThat(auditLog.getResourceId()).isEqualTo(tenant.getId());
+                    assertThat(auditLog.getCreatedAt()).isNotNull();
+                });
     }
 
     @Test
@@ -133,6 +154,24 @@ class ApplicationServiceTests {
     }
 
     @Test
+    void createsAuditLogWhenRoleIsAssignedToUser() {
+        Tenant tenant = tenantApplicationService.createTenant("Audit Assignment Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "carol", "Carol Example");
+        Role role = roleApplicationService.createRole(tenant.getId(), "reviewer");
+
+        userApplicationService.assignRoleToUser(user.getId(), role.getId());
+
+        assertThat(auditLogRepository.findByAction("ROLE_ASSIGNED_TO_USER"))
+                .singleElement()
+                .satisfies(auditLog -> {
+                    assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
+                    assertThat(auditLog.getActor()).isEqualTo("api-client");
+                    assertThat(auditLog.getResourceType()).isEqualTo("USER");
+                    assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
+                });
+    }
+
+    @Test
     void shouldRejectAssigningRoleFromDifferentTenantToUser() {
         Tenant userTenant = tenantApplicationService.createTenant("User Boundary Tenant");
         Tenant roleTenant = tenantApplicationService.createTenant("Role Boundary Tenant");
@@ -171,5 +210,31 @@ class ApplicationServiceTests {
         assertThat(loadedClient.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedClient.getClientId()).isEqualTo("portal");
         assertThat(loadedClient.getName()).isEqualTo("Portal");
+    }
+
+    @Test
+    void auditLogDoesNotIncludeSensitiveData() {
+        Tenant tenant = tenantApplicationService.createTenant("Sensitive Audit Tenant");
+
+        clientApplicationService.createClient(tenant.getId(), "secret-client-id", "Client With Secret");
+
+        assertThat(auditLogRepository.findByAction("CLIENT_CREATED"))
+                .singleElement()
+                .satisfies(this::assertNoSensitiveData);
+    }
+
+    private void assertNoSensitiveData(AuditLog auditLog) {
+        assertThat(auditLog.getActor())
+                .doesNotContainIgnoringCase("secret")
+                .doesNotContainIgnoringCase("token")
+                .doesNotContainIgnoringCase("password");
+        assertThat(auditLog.getAction())
+                .doesNotContainIgnoringCase("secret")
+                .doesNotContainIgnoringCase("token")
+                .doesNotContainIgnoringCase("password");
+        assertThat(auditLog.getResourceType())
+                .doesNotContainIgnoringCase("secret")
+                .doesNotContainIgnoringCase("token")
+                .doesNotContainIgnoringCase("password");
     }
 }

@@ -9,13 +9,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class PermissionApplicationService {
 
     private final PermissionRepository permissionRepository;
+    private final AuditApplicationService auditApplicationService;
 
-    public PermissionApplicationService(PermissionRepository permissionRepository) {
+    public PermissionApplicationService(
+            PermissionRepository permissionRepository,
+            AuditApplicationService auditApplicationService) {
         this.permissionRepository = permissionRepository;
+        this.auditApplicationService = auditApplicationService;
     }
 
     @Transactional
     public Permission createPermission(String name) {
-        return permissionRepository.save(Permission.create(name));
+        Permission permission = permissionRepository.save(Permission.create(name));
+        auditApplicationService.recordEvent(null, "PERMISSION_CREATED", "PERMISSION", permission.getId());
+        return permission;
     }
 }

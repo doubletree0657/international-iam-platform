@@ -16,14 +16,17 @@ public class UserApplicationService {
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
     private final RoleRepository roleRepository;
+    private final AuditApplicationService auditApplicationService;
 
     public UserApplicationService(
             UserRepository userRepository,
             TenantRepository tenantRepository,
-            RoleRepository roleRepository) {
+            RoleRepository roleRepository,
+            AuditApplicationService auditApplicationService) {
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
         this.roleRepository = roleRepository;
+        this.auditApplicationService = auditApplicationService;
     }
 
     @Transactional
@@ -31,7 +34,9 @@ public class UserApplicationService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant not found: " + tenantId));
 
-        return userRepository.save(User.create(tenant, username, displayName));
+        User user = userRepository.save(User.create(tenant, username, displayName));
+        auditApplicationService.recordEvent(tenant.getId(), "USER_CREATED", "USER", user.getId());
+        return user;
     }
 
     @Transactional
@@ -46,6 +51,9 @@ public class UserApplicationService {
         }
 
         user.getRoles().add(role);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        auditApplicationService.recordEvent(
+                savedUser.getTenant().getId(), "ROLE_ASSIGNED_TO_USER", "USER", savedUser.getId());
+        return savedUser;
     }
 }

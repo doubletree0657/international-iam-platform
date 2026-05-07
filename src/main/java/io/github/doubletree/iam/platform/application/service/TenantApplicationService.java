@@ -9,13 +9,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantApplicationService {
 
     private final TenantRepository tenantRepository;
+    private final AuditApplicationService auditApplicationService;
 
-    public TenantApplicationService(TenantRepository tenantRepository) {
+    public TenantApplicationService(TenantRepository tenantRepository, AuditApplicationService auditApplicationService) {
         this.tenantRepository = tenantRepository;
+        this.auditApplicationService = auditApplicationService;
     }
 
     @Transactional
     public Tenant createTenant(String name) {
-        return tenantRepository.save(Tenant.create(name));
+        Tenant tenant = tenantRepository.save(Tenant.create(name));
+        auditApplicationService.recordEvent(tenant.getId(), "TENANT_CREATED", "TENANT", tenant.getId());
+        return tenant;
     }
 }

@@ -13,10 +13,15 @@ public class ClientApplicationService {
 
     private final ClientRepository clientRepository;
     private final TenantRepository tenantRepository;
+    private final AuditApplicationService auditApplicationService;
 
-    public ClientApplicationService(ClientRepository clientRepository, TenantRepository tenantRepository) {
+    public ClientApplicationService(
+            ClientRepository clientRepository,
+            TenantRepository tenantRepository,
+            AuditApplicationService auditApplicationService) {
         this.clientRepository = clientRepository;
         this.tenantRepository = tenantRepository;
+        this.auditApplicationService = auditApplicationService;
     }
 
     @Transactional
@@ -24,6 +29,8 @@ public class ClientApplicationService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant not found: " + tenantId));
 
-        return clientRepository.save(Client.create(tenant, clientId, name));
+        Client client = clientRepository.save(Client.create(tenant, clientId, name));
+        auditApplicationService.recordEvent(tenant.getId(), "CLIENT_CREATED", "CLIENT", client.getId());
+        return client;
     }
 }

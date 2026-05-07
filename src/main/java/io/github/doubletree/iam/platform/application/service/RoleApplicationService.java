@@ -16,14 +16,17 @@ public class RoleApplicationService {
     private final RoleRepository roleRepository;
     private final TenantRepository tenantRepository;
     private final PermissionRepository permissionRepository;
+    private final AuditApplicationService auditApplicationService;
 
     public RoleApplicationService(
             RoleRepository roleRepository,
             TenantRepository tenantRepository,
-            PermissionRepository permissionRepository) {
+            PermissionRepository permissionRepository,
+            AuditApplicationService auditApplicationService) {
         this.roleRepository = roleRepository;
         this.tenantRepository = tenantRepository;
         this.permissionRepository = permissionRepository;
+        this.auditApplicationService = auditApplicationService;
     }
 
     @Transactional
@@ -31,7 +34,9 @@ public class RoleApplicationService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant not found: " + tenantId));
 
-        return roleRepository.save(Role.create(tenant, name));
+        Role role = roleRepository.save(Role.create(tenant, name));
+        auditApplicationService.recordEvent(tenant.getId(), "ROLE_CREATED", "ROLE", role.getId());
+        return role;
     }
 
     @Transactional
@@ -42,6 +47,9 @@ public class RoleApplicationService {
                 .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + permissionId));
 
         role.getPermissions().add(permission);
-        return roleRepository.save(role);
+        Role savedRole = roleRepository.save(role);
+        auditApplicationService.recordEvent(
+                savedRole.getTenant().getId(), "PERMISSION_ASSIGNED_TO_ROLE", "ROLE", savedRole.getId());
+        return savedRole;
     }
 }

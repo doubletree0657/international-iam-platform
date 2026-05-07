@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 9 — RBAC Authorization: Done**
+- **Phase 10 — Audit Logging: Done**
 
 Next phase:
 
-- **Phase 10 — Audit Logging**
+- **Phase 11 — MFA**
 
 ---
 
@@ -261,7 +261,7 @@ Goal:
 
 ### Phase 10 — Audit Logging
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -280,7 +280,7 @@ Example audit events:
 
 ### Phase 11 — MFA
 
-Status: Planned
+Status: Next
 
 Goal:
 
