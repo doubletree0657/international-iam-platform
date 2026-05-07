@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 7 — OAuth2 Authorization Server: Done**
+- **Phase 8 — OIDC / JWT: Done**
 
 Next phase:
 
-- **Phase 8 — OIDC / JWT**
+- **Phase 9 — RBAC Authorization**
 
 ---
 
@@ -236,7 +236,7 @@ Goal:
 
 ### Phase 8 — OIDC / JWT
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -249,7 +249,7 @@ Goal:
 
 ### Phase 9 — RBAC Authorization
 
-Status: Planned
+Status: Next
 
 Goal:
 
