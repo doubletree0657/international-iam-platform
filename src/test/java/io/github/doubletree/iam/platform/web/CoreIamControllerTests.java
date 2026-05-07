@@ -2,10 +2,12 @@ package io.github.doubletree.iam.platform.web;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.github.doubletree.iam.platform.authorization.AuthorizationServerConfiguration;
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
 import io.github.doubletree.iam.platform.application.service.EntityNotFoundException;
 import io.github.doubletree.iam.platform.application.service.PermissionApplicationService;
@@ -21,13 +23,14 @@ import io.github.doubletree.iam.platform.domain.User;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
-@AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest({
         TenantController.class,
         UserController.class,
@@ -36,6 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
         ClientController.class,
         RestExceptionHandler.class
 })
+@Import(AuthorizationServerConfiguration.class)
 class CoreIamControllerTests {
 
     private static final UUID TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -62,12 +66,16 @@ class CoreIamControllerTests {
     @MockitoBean
     private ClientApplicationService clientApplicationService;
 
+    private final RequestPostProcessor writeScopeJwt = jwt()
+            .authorities(new SimpleGrantedAuthority("SCOPE_iam.write"));
+
     @Test
     void createsTenant() throws Exception {
         when(tenantApplicationService.createTenant(eq("Acme")))
                 .thenReturn(tenant("Acme"));
 
         mockMvc.perform(post("/api/tenants")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"Acme"}
@@ -83,6 +91,7 @@ class CoreIamControllerTests {
                 .thenReturn(user("alice", "Alice Example"));
 
         mockMvc.perform(post("/api/users")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -104,6 +113,7 @@ class CoreIamControllerTests {
                 .thenReturn(role("admin"));
 
         mockMvc.perform(post("/api/roles")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -123,6 +133,7 @@ class CoreIamControllerTests {
                 .thenReturn(permission("clients:read"));
 
         mockMvc.perform(post("/api/permissions")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"clients:read"}
@@ -139,7 +150,8 @@ class CoreIamControllerTests {
         when(userApplicationService.assignRoleToUser(eq(USER_ID), eq(ROLE_ID)))
                 .thenReturn(user);
 
-        mockMvc.perform(post("/api/users/{userId}/roles/{roleId}", USER_ID, ROLE_ID))
+        mockMvc.perform(post("/api/users/{userId}/roles/{roleId}", USER_ID, ROLE_ID)
+                        .with(writeScopeJwt))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(USER_ID.toString()))
                 .andExpect(jsonPath("$.roleIds[0]").value(ROLE_ID.toString()));
@@ -152,7 +164,8 @@ class CoreIamControllerTests {
         when(roleApplicationService.assignPermissionToRole(eq(ROLE_ID), eq(PERMISSION_ID)))
                 .thenReturn(role);
 
-        mockMvc.perform(post("/api/roles/{roleId}/permissions/{permissionId}", ROLE_ID, PERMISSION_ID))
+        mockMvc.perform(post("/api/roles/{roleId}/permissions/{permissionId}", ROLE_ID, PERMISSION_ID)
+                        .with(writeScopeJwt))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ROLE_ID.toString()))
                 .andExpect(jsonPath("$.permissionIds[0]").value(PERMISSION_ID.toString()));
@@ -164,6 +177,7 @@ class CoreIamControllerTests {
                 .thenReturn(client("portal", "Portal"));
 
         mockMvc.perform(post("/api/clients")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -185,6 +199,7 @@ class CoreIamControllerTests {
                 .thenThrow(new EntityNotFoundException("Tenant not found: " + TENANT_ID));
 
         mockMvc.perform(post("/api/users")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -203,7 +218,8 @@ class CoreIamControllerTests {
         when(userApplicationService.assignRoleToUser(eq(USER_ID), eq(ROLE_ID)))
                 .thenThrow(new TenantBoundaryViolationException("User and role must belong to the same tenant"));
 
-        mockMvc.perform(post("/api/users/{userId}/roles/{roleId}", USER_ID, ROLE_ID))
+        mockMvc.perform(post("/api/users/{userId}/roles/{roleId}", USER_ID, ROLE_ID)
+                        .with(writeScopeJwt))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("tenant_boundary_violation"))
                 .andExpect(jsonPath("$.message").value("User and role must belong to the same tenant"));
@@ -212,6 +228,7 @@ class CoreIamControllerTests {
     @Test
     void validationErrorReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/tenants")
+                        .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":""}

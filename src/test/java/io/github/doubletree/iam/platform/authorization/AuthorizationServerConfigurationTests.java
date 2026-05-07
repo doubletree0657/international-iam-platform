@@ -2,6 +2,8 @@ package io.github.doubletree.iam.platform.authorization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -77,5 +80,45 @@ class AuthorizationServerConfigurationTests {
                 .andExpect(jsonPath("$.access_token").isNotEmpty())
                 .andExpect(jsonPath("$.token_type").value("Bearer"))
                 .andExpect(jsonPath("$.expires_in").isNumber());
+    }
+
+    @Test
+    void healthEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
+    void postApiWithoutTokenIsRejected() throws Exception {
+        mockMvc.perform(post("/api/tenants")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"No Token Tenant"}
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void postApiWithWriteScopeSucceeds() throws Exception {
+        mockMvc.perform(post("/api/tenants")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_iam.write")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Write Scope Tenant"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Write Scope Tenant"));
+    }
+
+    @Test
+    void postApiWithOnlyReadScopeIsRejected() throws Exception {
+        mockMvc.perform(post("/api/tenants")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_iam.read")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Read Scope Tenant"}
+                                """))
+                .andExpect(status().isForbidden());
     }
 }

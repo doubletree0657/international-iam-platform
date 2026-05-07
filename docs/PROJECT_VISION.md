@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 8 — OIDC / JWT: Done**
+- **Phase 9 — RBAC Authorization: Done**
 
 Next phase:
 
-- **Phase 9 — RBAC Authorization**
+- **Phase 10 — Audit Logging**
 
 ---
 
@@ -249,7 +249,7 @@ Goal:
 
 ### Phase 9 — RBAC Authorization
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -261,7 +261,7 @@ Goal:
 
 ### Phase 10 — Audit Logging
 
-Status: Planned
+Status: Next
 
 Goal:
 
