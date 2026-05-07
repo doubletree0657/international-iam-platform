@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 6.5 — Tenant Boundary Validation: Done**
+- **Phase 7 — OAuth2 Authorization Server: Done**
 
 Next phase:
 
-- **Phase 7 — OAuth2 Authorization Server**
+- **Phase 8 — OIDC / JWT**
 
 ---
 
@@ -223,7 +223,7 @@ Goal:
 
 ### Phase 7 — OAuth2 Authorization Server
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -236,7 +236,7 @@ Goal:
 
 ### Phase 8 — OIDC / JWT
 
-Status: Planned
+Status: Next
 
 Goal:
 
