@@ -3,3 +3,8 @@ spring:
     compose:
       skip:
         in-tests: true
+
+iam:
+  security:
+    # Test/local development only. Production systems should use secure external key management.
+    secret-encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=

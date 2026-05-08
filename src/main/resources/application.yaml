@@ -12,3 +12,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+
+iam:
+  security:
+    # Local development only. Do not use this key in production; use secure external key management.
+    secret-encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=

@@ -41,6 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         PermissionApplicationService.class,
         ClientApplicationService.class,
         AuditApplicationService.class,
+        SecretEncryptionService.class,
         MfaApplicationService.class
 })
 class ApplicationServiceTests {
@@ -65,6 +66,9 @@ class ApplicationServiceTests {
 
     @Autowired
     private MfaApplicationService mfaApplicationService;
+
+    @Autowired
+    private SecretEncryptionService secretEncryptionService;
 
     @Autowired
     private TenantRepository tenantRepository;
@@ -129,7 +133,17 @@ class ApplicationServiceTests {
     }
 
     @Test
-    void enrollingMfaGeneratesSecretAndEnablesMfa() {
+    void encryptsAndDecryptsSecret() {
+        String plaintext = "TOTPSECRET123";
+
+        String ciphertext = secretEncryptionService.encrypt(plaintext);
+
+        assertThat(ciphertext).isNotEqualTo(plaintext);
+        assertThat(secretEncryptionService.decrypt(ciphertext)).isEqualTo(plaintext);
+    }
+
+    @Test
+    void enrollingMfaGeneratesSecretAndStoresEncryptedSecret() {
         Tenant tenant = tenantApplicationService.createTenant("MFA Enrollment Tenant");
         User user = userApplicationService.createUser(tenant.getId(), "mfa-user", "MFA User");
 
@@ -139,7 +153,8 @@ class ApplicationServiceTests {
         assertThat(enrollment.userId()).isEqualTo(user.getId());
         assertThat(enrollment.secret()).isNotBlank();
         assertThat(loadedUser.isMfaEnabled()).isTrue();
-        assertThat(loadedUser.getMfaSecret()).isEqualTo(enrollment.secret());
+        assertThat(loadedUser.getMfaSecret()).isNotEqualTo(enrollment.secret());
+        assertThat(secretEncryptionService.decrypt(loadedUser.getMfaSecret())).isEqualTo(enrollment.secret());
     }
 
     @Test

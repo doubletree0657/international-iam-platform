@@ -24,11 +24,16 @@ public class MfaApplicationService {
 
     private final UserRepository userRepository;
     private final AuditApplicationService auditApplicationService;
+    private final SecretEncryptionService secretEncryptionService;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public MfaApplicationService(UserRepository userRepository, AuditApplicationService auditApplicationService) {
+    public MfaApplicationService(
+            UserRepository userRepository,
+            AuditApplicationService auditApplicationService,
+            SecretEncryptionService secretEncryptionService) {
         this.userRepository = userRepository;
         this.auditApplicationService = auditApplicationService;
+        this.secretEncryptionService = secretEncryptionService;
     }
 
     @Transactional
@@ -36,8 +41,8 @@ public class MfaApplicationService {
         User user = findUser(userId);
         String secret = generateSecret();
 
-        // MVP storage only: production systems should protect MFA secrets with stronger secret management.
-        user.setMfaSecret(secret);
+        // Development-level protection only: production systems should use secure external key management.
+        user.setMfaSecret(secretEncryptionService.encrypt(secret));
         user.setMfaEnabled(true);
         User savedUser = userRepository.save(user);
 
@@ -52,7 +57,8 @@ public class MfaApplicationService {
             return false;
         }
 
-        boolean valid = isValidTotpCode(user.getMfaSecret(), code, Instant.now());
+        String secret = secretEncryptionService.decrypt(user.getMfaSecret());
+        boolean valid = isValidTotpCode(secret, code, Instant.now());
         if (valid) {
             auditApplicationService.recordEvent(user.getTenant().getId(), "MFA_VERIFIED", "USER", user.getId());
         }

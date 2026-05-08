@@ -103,7 +103,7 @@ Current completed work:
 
 Current phase:
 
-- **Phase 11.5 — MFA Hardening: Done**
+- **Phase 11.6 — Secret Protection Foundation: Done**
 
 Next phase:
 
@@ -299,6 +299,18 @@ Goal:
 - Add RFC 6238-compatible TOTP test coverage
 - Use constant-time TOTP verification comparison
 - Verify normal user responses do not expose MFA secrets
+
+---
+
+### Phase 11.6 — Secret Protection Foundation
+
+Status: Done
+
+Goal:
+
+- Add minimal encryption for stored MFA secrets
+- Keep local development key configuration simple
+- Preserve the existing MFA use cases without new APIs or schema changes
 
 ---
 
