@@ -16,8 +16,11 @@ import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import io.github.doubletree.iam.platform.web.dto.UserResponse;
+import java.lang.reflect.RecordComponent;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -160,6 +163,24 @@ class ApplicationServiceTests {
         assertThat(mfaApplicationService.verifyTotp(user.getId(), invalidCode)).isFalse();
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "59,287082",
+            "1111111109,081804",
+            "1111111111,050471",
+            "1234567890,005924",
+            "2000000000,279037",
+            "20000000000,353130"
+    })
+    void generatesSixDigitTotpCodesFromRfc6238Sha1Vectors(long epochSecond, String expectedCode) {
+        // RFC 6238 publishes 8-digit SHA-1 values; this local MVP intentionally supports 6-digit TOTP only.
+        String rfc6238Sha1Secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+
+        String code = mfaApplicationService.generateTotpCode(rfc6238Sha1Secret, Instant.ofEpochSecond(epochSecond));
+
+        assertThat(code).isEqualTo(expectedCode);
+    }
+
     @Test
     void disablingMfaClearsMfaState() {
         Tenant tenant = tenantApplicationService.createTenant("MFA Disable Tenant");
@@ -207,6 +228,9 @@ class ApplicationServiceTests {
 
         UserResponse response = UserResponse.from(loadedUser);
 
+        assertThat(UserResponse.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .doesNotContain("mfaSecret");
         assertThat(response.toString()).doesNotContain(enrollment.secret());
     }
 

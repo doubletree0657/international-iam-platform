@@ -103,7 +103,7 @@ Current completed work:
 
 Current phase:
 
-- **Phase 11 — MFA: Done**
+- **Phase 11.5 — MFA Hardening: Done**
 
 Next phase:
 
@@ -287,6 +287,18 @@ Goal:
 - Add TOTP-based multi-factor authentication
 - Handle MFA enrollment and verification
 - Protect MFA secrets carefully
+
+---
+
+### Phase 11.5 — MFA Hardening
+
+Status: Done
+
+Goal:
+
+- Add RFC 6238-compatible TOTP test coverage
+- Use constant-time TOTP verification comparison
+- Verify normal user responses do not expose MFA secrets
 
 ---
 

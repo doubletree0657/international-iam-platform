@@ -3,6 +3,8 @@ package io.github.doubletree.iam.platform.application.service;
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
@@ -34,6 +36,7 @@ public class MfaApplicationService {
         User user = findUser(userId);
         String secret = generateSecret();
 
+        // MVP storage only: production systems should protect MFA secrets with stronger secret management.
         user.setMfaSecret(secret);
         user.setMfaEnabled(true);
         User savedUser = userRepository.save(user);
@@ -90,9 +93,18 @@ public class MfaApplicationService {
     }
 
     private boolean isValidTotpCode(String secret, String code, Instant instant) {
-        return generateTotpCode(secret, instant.minusSeconds(TOTP_TIME_STEP_SECONDS)).equals(code)
-                || generateTotpCode(secret, instant).equals(code)
-                || generateTotpCode(secret, instant.plusSeconds(TOTP_TIME_STEP_SECONDS)).equals(code);
+        return isSameTotpCode(generateTotpCode(secret, instant.minusSeconds(TOTP_TIME_STEP_SECONDS)), code)
+                || isSameTotpCode(generateTotpCode(secret, instant), code)
+                || isSameTotpCode(generateTotpCode(secret, instant.plusSeconds(TOTP_TIME_STEP_SECONDS)), code);
+    }
+
+    private boolean isSameTotpCode(String expectedCode, String providedCode) {
+        if (providedCode == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expectedCode.getBytes(StandardCharsets.US_ASCII),
+                providedCode.getBytes(StandardCharsets.US_ASCII));
     }
 
     private User findUser(UUID userId) {
