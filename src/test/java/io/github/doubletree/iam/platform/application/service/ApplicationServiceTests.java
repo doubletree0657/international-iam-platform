@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.doubletree.iam.platform.domain.AuditLog;
 import io.github.doubletree.iam.platform.domain.Client;
+import io.github.doubletree.iam.platform.domain.Group;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.repository.AuditLogRepository;
 import io.github.doubletree.iam.platform.repository.ClientRepository;
+import io.github.doubletree.iam.platform.repository.GroupRepository;
 import io.github.doubletree.iam.platform.repository.PermissionRepository;
 import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
@@ -40,6 +42,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         RoleApplicationService.class,
         PermissionApplicationService.class,
         ClientApplicationService.class,
+        GroupApplicationService.class,
         AuditApplicationService.class,
         SecretEncryptionService.class,
         MfaApplicationService.class
@@ -65,6 +68,9 @@ class ApplicationServiceTests {
     private ClientApplicationService clientApplicationService;
 
     @Autowired
+    private GroupApplicationService groupApplicationService;
+
+    @Autowired
     private MfaApplicationService mfaApplicationService;
 
     @Autowired
@@ -84,6 +90,9 @@ class ApplicationServiceTests {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
 
     @Autowired
     private AuditLogRepository auditLogRepository;
@@ -340,6 +349,83 @@ class ApplicationServiceTests {
         assertThat(loadedClient.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedClient.getClientId()).isEqualTo("portal");
         assertThat(loadedClient.getName()).isEqualTo("Portal");
+    }
+
+    @Test
+    void createsGroupUnderTenant() {
+        Tenant tenant = tenantApplicationService.createTenant("Group Tenant");
+
+        Group group = groupApplicationService.createGroup(tenant.getId(), "engineering");
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+        assertThat(loadedGroup.getTenant().getId()).isEqualTo(tenant.getId());
+        assertThat(loadedGroup.getName()).isEqualTo("engineering");
+    }
+
+    @Test
+    void addsUserToGroupUnderSameTenant() {
+        Tenant tenant = tenantApplicationService.createTenant("Group Member Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "member-user", "Member User");
+        Group group = groupApplicationService.createGroup(tenant.getId(), "members");
+
+        groupApplicationService.addUserToGroup(group.getId(), user.getId());
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+        assertThat(loadedGroup.getUsers())
+                .extracting(User::getUsername)
+                .containsExactly("member-user");
+    }
+
+    @Test
+    void removesUserFromGroup() {
+        Tenant tenant = tenantApplicationService.createTenant("Group Remove Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "remove-user", "Remove User");
+        Group group = groupApplicationService.createGroup(tenant.getId(), "removable");
+        groupApplicationService.addUserToGroup(group.getId(), user.getId());
+
+        groupApplicationService.removeUserFromGroup(group.getId(), user.getId());
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+        assertThat(loadedGroup.getUsers()).isEmpty();
+    }
+
+    @Test
+    void rejectsAddingUserFromDifferentTenantToGroup() {
+        Tenant groupTenant = tenantApplicationService.createTenant("Group Boundary Tenant");
+        Tenant userTenant = tenantApplicationService.createTenant("Member Boundary Tenant");
+        Group group = groupApplicationService.createGroup(groupTenant.getId(), "boundary-group");
+        User user = userApplicationService.createUser(userTenant.getId(), "external-member", "External Member");
+
+        assertThatThrownBy(() -> groupApplicationService.addUserToGroup(group.getId(), user.getId()))
+                .isInstanceOf(TenantBoundaryViolationException.class)
+                .hasMessage("User and group must belong to the same tenant");
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+        assertThat(loadedGroup.getUsers()).isEmpty();
+    }
+
+    @Test
+    void recordsAuditEventsForGroupOperations() {
+        Tenant tenant = tenantApplicationService.createTenant("Group Audit Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "group-audit-user", "Group Audit User");
+        Group group = groupApplicationService.createGroup(tenant.getId(), "audited-group");
+
+        groupApplicationService.addUserToGroup(group.getId(), user.getId());
+        groupApplicationService.removeUserFromGroup(group.getId(), user.getId());
+
+        assertThat(auditLogRepository.findByAction("GROUP_CREATED"))
+                .singleElement()
+                .satisfies(auditLog -> {
+                    assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
+                    assertThat(auditLog.getResourceType()).isEqualTo("GROUP");
+                    assertThat(auditLog.getResourceId()).isEqualTo(group.getId());
+                });
+        assertThat(auditLogRepository.findByAction("USER_ADDED_TO_GROUP"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(group.getId()));
+        assertThat(auditLogRepository.findByAction("USER_REMOVED_FROM_GROUP"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(group.getId()));
     }
 
     @Test

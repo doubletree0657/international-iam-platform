@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 11.6 — Secret Protection Foundation: Done**
+- **Phase 12 — SCIM: Done**
 
 Next phase:
 
-- **Phase 12 — SCIM**
+- **Phase 13 — OpenAPI Documentation**
 
 ---
 
@@ -316,7 +316,7 @@ Goal:
 
 ### Phase 12 — SCIM
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -330,7 +330,7 @@ Group support is intentionally postponed until this stage or a later authorizati
 
 ### Phase 13 — OpenAPI Documentation
 
-Status: Planned
+Status: Next
 
 Goal:
 

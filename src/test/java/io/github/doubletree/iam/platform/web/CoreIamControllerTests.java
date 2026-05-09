@@ -3,6 +3,7 @@ package io.github.doubletree.iam.platform.web;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,12 +11,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import io.github.doubletree.iam.platform.authorization.AuthorizationServerConfiguration;
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
 import io.github.doubletree.iam.platform.application.service.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.service.GroupApplicationService;
 import io.github.doubletree.iam.platform.application.service.PermissionApplicationService;
 import io.github.doubletree.iam.platform.application.service.RoleApplicationService;
 import io.github.doubletree.iam.platform.application.service.TenantApplicationService;
 import io.github.doubletree.iam.platform.application.service.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.application.service.UserApplicationService;
 import io.github.doubletree.iam.platform.domain.Client;
+import io.github.doubletree.iam.platform.domain.Group;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
@@ -37,6 +40,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
         RoleController.class,
         PermissionController.class,
         ClientController.class,
+        ScimController.class,
         RestExceptionHandler.class
 })
 @Import(AuthorizationServerConfiguration.class)
@@ -47,6 +51,7 @@ class CoreIamControllerTests {
     private static final UUID ROLE_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
     private static final UUID PERMISSION_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
     private static final UUID CLIENT_ID = UUID.fromString("00000000-0000-0000-0000-000000000005");
+    private static final UUID GROUP_ID = UUID.fromString("00000000-0000-0000-0000-000000000006");
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,8 +71,14 @@ class CoreIamControllerTests {
     @MockitoBean
     private ClientApplicationService clientApplicationService;
 
+    @MockitoBean
+    private GroupApplicationService groupApplicationService;
+
     private final RequestPostProcessor writeScopeJwt = jwt()
             .authorities(new SimpleGrantedAuthority("SCOPE_iam.write"));
+
+    private final RequestPostProcessor readScopeJwt = jwt()
+            .authorities(new SimpleGrantedAuthority("SCOPE_iam.read"));
 
     @Test
     void createsTenant() throws Exception {
@@ -194,6 +205,100 @@ class CoreIamControllerTests {
     }
 
     @Test
+    void createsScimUser() throws Exception {
+        when(userApplicationService.createUser(eq(TENANT_ID), eq("scim-user"), eq("SCIM User")))
+                .thenReturn(user("scim-user", "SCIM User"));
+
+        mockMvc.perform(post("/scim/v2/Users")
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "userName":"scim-user",
+                                  "displayName":"SCIM User"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schemas[0]").value("urn:ietf:params:scim:schemas:core:2.0:User"))
+                .andExpect(jsonPath("$.id").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.userName").value("scim-user"))
+                .andExpect(jsonPath("$.displayName").value("SCIM User"))
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.mfaSecret").doesNotExist());
+    }
+
+    @Test
+    void readsScimUser() throws Exception {
+        User user = user("read-scim-user", "Read SCIM User");
+        user.setMfaSecret("encrypted-secret");
+        when(userApplicationService.findUser(eq(USER_ID)))
+                .thenReturn(user);
+
+        mockMvc.perform(get("/scim/v2/Users/{id}", USER_ID)
+                        .with(readScopeJwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.userName").value("read-scim-user"))
+                .andExpect(jsonPath("$.mfaSecret").doesNotExist());
+    }
+
+    @Test
+    void createsScimGroup() throws Exception {
+        Group group = group("engineering");
+        group.getUsers().add(user("scim-member", "SCIM Member"));
+        when(groupApplicationService.createGroup(eq(TENANT_ID), eq("engineering")))
+                .thenReturn(group("engineering"));
+        when(groupApplicationService.addUserToGroup(eq(GROUP_ID), eq(USER_ID)))
+                .thenReturn(group);
+
+        mockMvc.perform(post("/scim/v2/Groups")
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "displayName":"engineering",
+                                  "members":["00000000-0000-0000-0000-000000000002"]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schemas[0]").value("urn:ietf:params:scim:schemas:core:2.0:Group"))
+                .andExpect(jsonPath("$.id").value(GROUP_ID.toString()))
+                .andExpect(jsonPath("$.displayName").value("engineering"))
+                .andExpect(jsonPath("$.members[0].value").value(USER_ID.toString()));
+    }
+
+    @Test
+    void readsScimGroup() throws Exception {
+        Group group = group("readers");
+        group.getUsers().add(user("reader", "Reader User"));
+        when(groupApplicationService.findGroup(eq(GROUP_ID)))
+                .thenReturn(group);
+
+        mockMvc.perform(get("/scim/v2/Groups/{id}", GROUP_ID)
+                        .with(readScopeJwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(GROUP_ID.toString()))
+                .andExpect(jsonPath("$.displayName").value("readers"))
+                .andExpect(jsonPath("$.members[0].display").value("Reader User"));
+    }
+
+    @Test
+    void unauthorizedScimRequestIsRejected() throws Exception {
+        mockMvc.perform(post("/scim/v2/Users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "userName":"scim-user",
+                                  "displayName":"SCIM User"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void entityNotFoundReturnsNotFound() throws Exception {
         when(userApplicationService.createUser(eq(TENANT_ID), eq("missing"), eq("Missing User")))
                 .thenThrow(new EntityNotFoundException("Tenant not found: " + TENANT_ID));
@@ -266,5 +371,11 @@ class CoreIamControllerTests {
         Client client = Client.create(tenant("Test Tenant"), clientId, name);
         client.setId(CLIENT_ID);
         return client;
+    }
+
+    private Group group(String name) {
+        Group group = Group.create(tenant("Test Tenant"), name);
+        group.setId(GROUP_ID);
+        return group;
     }
 }

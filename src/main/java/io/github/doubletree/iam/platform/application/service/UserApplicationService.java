@@ -39,6 +39,12 @@ public class UserApplicationService {
         return user;
     }
 
+    @Transactional(readOnly = true)
+    public User findUser(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+    }
+
     @Transactional
     public User assignRoleToUser(UUID userId, UUID roleId) {
         User user = userRepository.findById(userId)

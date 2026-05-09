@@ -53,6 +53,9 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new LinkedHashSet<>();
 
+    @ManyToMany(mappedBy = "users")
+    private Set<Group> groups = new LinkedHashSet<>();
+
     protected User() {
     }
 
@@ -110,6 +113,14 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public Set<Group> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(Set<Group> groups) {
+        this.groups = groups;
     }
 
     public boolean isMfaEnabled() {

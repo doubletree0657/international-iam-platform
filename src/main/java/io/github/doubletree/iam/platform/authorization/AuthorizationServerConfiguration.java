@@ -61,6 +61,8 @@ public class AuthorizationServerConfiguration {
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("SCOPE_iam.write")
                         .requestMatchers("/api/**").hasAuthority("SCOPE_iam.read")
+                        .requestMatchers(HttpMethod.POST, "/scim/v2/**").hasAuthority("SCOPE_iam.write")
+                        .requestMatchers("/scim/v2/**").hasAuthority("SCOPE_iam.read")
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .csrf(AbstractHttpConfigurer::disable);
