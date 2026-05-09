@@ -68,10 +68,16 @@ public class GroupApplicationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
 
-        group.getUsers().remove(user);
+        if (!group.getTenant().getId().equals(user.getTenant().getId())) {
+            throw new TenantBoundaryViolationException("User and group must belong to the same tenant");
+        }
+
+        boolean removed = group.getUsers().remove(user);
         Group savedGroup = groupRepository.save(group);
-        auditApplicationService.recordEvent(
-                savedGroup.getTenant().getId(), "USER_REMOVED_FROM_GROUP", "GROUP", savedGroup.getId());
+        if (removed) {
+            auditApplicationService.recordEvent(
+                    savedGroup.getTenant().getId(), "USER_REMOVED_FROM_GROUP", "GROUP", savedGroup.getId());
+        }
         return savedGroup;
     }
 }

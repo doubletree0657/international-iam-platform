@@ -103,7 +103,7 @@ Current completed work:
 
 Current phase:
 
-- **Phase 12 — SCIM: Done**
+- **Phase 12.5 — Group Membership Consistency: Done**
 
 Next phase:
 
@@ -325,6 +325,17 @@ Goal:
 - Support Groups if needed
 
 Group support is intentionally postponed until this stage or a later authorization-model expansion stage.
+
+---
+
+### Phase 12.5 — Group Membership Consistency
+
+Status: Done
+
+Goal:
+
+- Validate tenant boundaries when removing users from groups
+- Avoid misleading audit events for no-op group removals
 
 ---
 

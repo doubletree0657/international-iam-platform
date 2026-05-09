@@ -377,7 +377,7 @@ class ApplicationServiceTests {
     }
 
     @Test
-    void removesUserFromGroup() {
+    void removesUserFromGroupUnderSameTenant() {
         Tenant tenant = tenantApplicationService.createTenant("Group Remove Tenant");
         User user = userApplicationService.createUser(tenant.getId(), "remove-user", "Remove User");
         Group group = groupApplicationService.createGroup(tenant.getId(), "removable");
@@ -387,6 +387,31 @@ class ApplicationServiceTests {
 
         Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
         assertThat(loadedGroup.getUsers()).isEmpty();
+    }
+
+    @Test
+    void rejectsRemovingUserFromDifferentTenantFromGroup() {
+        Tenant groupTenant = tenantApplicationService.createTenant("Group Remove Boundary Tenant");
+        Tenant userTenant = tenantApplicationService.createTenant("Remove Member Boundary Tenant");
+        Group group = groupApplicationService.createGroup(groupTenant.getId(), "remove-boundary-group");
+        User user = userApplicationService.createUser(userTenant.getId(), "remove-external-member", "Remove External");
+
+        assertThatThrownBy(() -> groupApplicationService.removeUserFromGroup(group.getId(), user.getId()))
+                .isInstanceOf(TenantBoundaryViolationException.class)
+                .hasMessage("User and group must belong to the same tenant");
+    }
+
+    @Test
+    void removingUserWhoIsNotGroupMemberDoesNotRecordRemovalAuditEvent() {
+        Tenant tenant = tenantApplicationService.createTenant("No Op Remove Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "not-member-user", "Not Member User");
+        Group group = groupApplicationService.createGroup(tenant.getId(), "no-op-removable");
+
+        groupApplicationService.removeUserFromGroup(group.getId(), user.getId());
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+        assertThat(loadedGroup.getUsers()).isEmpty();
+        assertThat(auditLogRepository.findByAction("USER_REMOVED_FROM_GROUP")).isEmpty();
     }
 
     @Test
