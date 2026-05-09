@@ -8,6 +8,9 @@ import io.github.doubletree.iam.platform.web.dto.ScimCreateGroupRequest;
 import io.github.doubletree.iam.platform.web.dto.ScimCreateUserRequest;
 import io.github.doubletree.iam.platform.web.dto.ScimGroupResponse;
 import io.github.doubletree.iam.platform.web.dto.ScimUserResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/scim/v2")
+@Tag(name = "SCIM", description = "Minimal SCIM-style provisioning APIs")
+@SecurityRequirement(name = OpenApiConfiguration.BEARER_AUTH)
 public class ScimController {
 
     private final UserApplicationService userApplicationService;
@@ -35,18 +40,21 @@ public class ScimController {
 
     @PostMapping("/Users")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create SCIM user", description = "Requires iam.write scope.")
     public ScimUserResponse createUser(@Valid @RequestBody ScimCreateUserRequest request) {
         User user = userApplicationService.createUser(request.tenantId(), request.userName(), request.displayName());
         return ScimUserResponse.from(user);
     }
 
     @GetMapping("/Users/{id}")
+    @Operation(summary = "Get SCIM user", description = "Requires iam.read scope.")
     public ScimUserResponse getUser(@PathVariable UUID id) {
         return ScimUserResponse.from(userApplicationService.findUser(id));
     }
 
     @PostMapping("/Groups")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create SCIM group", description = "Requires iam.write scope.")
     public ScimGroupResponse createGroup(@Valid @RequestBody ScimCreateGroupRequest request) {
         Group group = groupApplicationService.createGroup(request.tenantId(), request.displayName());
         if (request.members() != null) {
@@ -58,6 +66,7 @@ public class ScimController {
     }
 
     @GetMapping("/Groups/{id}")
+    @Operation(summary = "Get SCIM group", description = "Requires iam.read scope.")
     public ScimGroupResponse getGroup(@PathVariable UUID id) {
         return ScimGroupResponse.from(groupApplicationService.findGroup(id));
     }

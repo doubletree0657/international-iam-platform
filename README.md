@@ -97,6 +97,22 @@ Expected response:
 }
 ```
 
+## API Documentation
+
+Swagger UI is available after the application starts:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+The OpenAPI JSON document is available at:
+
+```text
+http://localhost:8080/v3/api-docs
+```
+
+The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes: write operations require `iam.write`, and read operations require `iam.read`.
+
 ## Roadmap
 
 - Phase 1: Clean public baseline, documentation, local dependencies, and health check. Done.

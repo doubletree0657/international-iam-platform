@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 12.5 — Group Membership Consistency: Done**
+- **Phase 13 — OpenAPI Documentation: Done**
 
 Next phase:
 
-- **Phase 13 — OpenAPI Documentation**
+- **Phase 14 — GitLab CI/CD**
 
 ---
 
@@ -341,7 +341,7 @@ Goal:
 
 ### Phase 13 — OpenAPI Documentation
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -353,7 +353,7 @@ Goal:
 
 ### Phase 14 — GitLab CI/CD
 
-Status: Planned
+Status: Next
 
 Goal:
 

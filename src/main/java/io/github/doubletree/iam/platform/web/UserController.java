@@ -4,6 +4,9 @@ import io.github.doubletree.iam.platform.application.service.UserApplicationServ
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.web.dto.CreateUserRequest;
 import io.github.doubletree.iam.platform.web.dto.UserResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Users", description = "User management APIs")
+@SecurityRequirement(name = OpenApiConfiguration.BEARER_AUTH)
 public class UserController {
 
     private final UserApplicationService userApplicationService;
@@ -26,12 +31,14 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create user", description = "Requires iam.write scope.")
     public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
         User user = userApplicationService.createUser(request.tenantId(), request.username(), request.displayName());
         return UserResponse.from(user);
     }
 
     @PostMapping("/{userId}/roles/{roleId}")
+    @Operation(summary = "Assign role to user", description = "Requires iam.write scope.")
     public UserResponse assignRoleToUser(@PathVariable UUID userId, @PathVariable UUID roleId) {
         User user = userApplicationService.assignRoleToUser(userId, roleId);
         return UserResponse.from(user);
