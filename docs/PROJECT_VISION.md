@@ -2,88 +2,124 @@
 
 ## Purpose
 
-`international-iam-platform` is a public portfolio project for building, explaining, and evolving an IAM backend foundation.
+`international-iam-platform` is a project for building the backend foundations
+of an identity and access management system.
 
-The project supports four goals:
+The documentation should help future developers and AI tools quickly recover
+project context, understand the current direction, and continue development
+without treating the project as a finished IAM product.
 
-- Future development planning.
-- Portfolio presentation.
-- Interview preparation.
-- Clear context for AI-assisted development.
+The current project state is an IAM backend foundation prototype. It is not
+production-ready, not a complete usable IAM product, and does not yet include
+user login flows or a frontend.
 
-The current state is an IAM backend foundation prototype. It is production-inspired, but it is not a complete production-ready IAM product and it is not a formal release.
+Current progress and future development planning are tracked in the
+[Roadmap](ROADMAP.md).
 
-## Product Direction
+## Project Direction
 
-The long-term direction is an explainable IAM backend that can demonstrate realistic identity and access management concerns:
+The project is moving toward an explainable IAM backend that demonstrates
+realistic identity, authorization, provisioning, audit, and security concepts.
 
-- Multi-tenant identity modeling.
-- OAuth2 and OIDC concepts.
-- JWT-based API protection.
-- Role, permission, group, and client management.
+The direction is intentionally backend-first:
+
+- Build a clear IAM domain model.
+- Keep tenant boundaries explicit.
+- Expose focused REST and SCIM-style APIs.
+- Use OAuth2 and JWT concepts for API protection.
+- Add security-sensitive features with tests and clear documentation.
+- Keep operational and product maturity separate from prototype capability.
+
+## Final Goal
+
+The long-term goal is a coherent IAM backend that can support:
+
+- Tenant-aware user, client, role, permission, and group management.
+- User authentication and account lifecycle flows.
+- OAuth2 and OIDC-style authorization behavior.
+- Token lifecycle management.
+- MFA and secret protection.
+- SCIM-style provisioning.
 - Auditability for important administration and security events.
-- MFA and secret protection foundations.
-- SCIM-style provisioning concepts.
-- API documentation and CI/CD practice.
+- Clear operational documentation for local and deployment workflows.
 
-The project should remain honest about its maturity. Each phase should add a focused backend capability without implying production readiness before the required operational, security, and product hardening exists.
+The final goal is not to clone an existing IAM product. The goal is to build a
+clear, maintainable backend that shows the major design concerns of an IAM
+platform.
 
-## Engineering Goals
+## Architecture Design
 
-The project is intended to show:
+The project follows a modular monolith direction.
 
-- Modern Java and Spring Boot backend development.
-- Modular monolith architecture.
-- Clear domain modeling before product expansion.
-- Use-case-oriented application services.
-- Database migration discipline with Flyway.
-- Persistence testing with PostgreSQL Testcontainers.
-- Security design tradeoffs that can be explained in interviews.
-- Practical local development with Docker Compose.
-- CI/CD familiarity through GitLab pipelines.
-- Clear technical communication in English.
-
-## Architecture Direction
-
-The project follows a modular monolith direction:
+This means:
 
 - One Spring Boot application.
 - Clear internal responsibility boundaries.
 - Simple local development and testing.
 - No early distributed-system complexity.
 
-This is intentional. At the current stage, internal boundaries matter more than service boundaries. A modular monolith keeps the project easier to run, review, and explain while still supporting future extraction if a real product need appears.
+At the current stage, internal module boundaries are more important than
+microservice boundaries. The project should remain easy to run locally and easy
+to reason about while still separating domain, application, web, persistence,
+security, audit, MFA, and SCIM responsibilities.
+
+## Technology Stack
+
+Core stack:
+
+- Java 21.
+- Spring Boot 3.5.
+- Maven Wrapper.
+- PostgreSQL.
+- Redis.
+- Flyway.
+- Docker Compose.
+- JUnit 5.
+- Testcontainers.
+
+Security and API stack:
+
+- Spring Security.
+- Spring Authorization Server.
+- OAuth2 foundations.
+- JWT and JWK support.
+- OpenAPI / Swagger UI.
+
+Project platforms:
+
+- GitHub for source hosting and project review.
+- GitLab for CI/CD practice.
 
 ## Development Principles
 
 - Keep the project explainable.
-- Prefer small, focused phases.
+- Prefer small, focused development steps.
 - Keep documentation synchronized with the current code.
-- Avoid over-engineering.
-- Test persistence, tenant boundaries, and security-sensitive behavior.
+- Avoid over-engineering before product requirements justify it.
+- Put business-sensitive checks in application services where appropriate.
+- Verify persistence, tenant boundaries, and security-sensitive behavior with
+  tests.
 - Treat AI-generated code as draft work that needs review.
-- Clearly separate prototype behavior from production-ready claims.
+- Record important context in documentation so future conversations can resume
+  quickly.
 
 ## Security Principles
 
 - Do not store passwords, client secrets, tokens, or MFA secrets in plain text.
 - Do not log tokens, passwords, client secrets, or MFA secrets.
 - Keep tenant boundary checks explicit and testable.
-- Protect signing keys and encryption secrets.
+- Keep local development secrets separate from production secrets.
 - Do not commit real CI/CD secrets.
-- Distinguish local development security from production-grade security.
+- Clearly distinguish prototype security from production-grade security.
 
-## Non-Goals At This Stage
+## Current Non-Goals
 
 The project is not currently trying to be:
 
 - A complete production IAM product.
-- A formal product release.
-- A full enterprise IAM replacement.
+- A complete user-facing application.
+- A frontend application.
 - A microservices platform.
 - A Kubernetes or cloud infrastructure project.
-- A clone of any company system.
-
-## Target Outcome
-
-The project should be easy to run, easy to review, and easy to discuss. It should help demonstrate backend engineering judgment, IAM domain understanding, security tradeoff awareness, and the ability to communicate architecture clearly.
+- A clone of an existing commercial IAM product.
+- A release preparation exercise.

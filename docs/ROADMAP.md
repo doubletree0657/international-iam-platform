@@ -1,126 +1,134 @@
 # Roadmap
 
-## Current Status
+## Current State
 
-The IAM backend foundation stage is complete.
+The project is currently an IAM backend foundation prototype.
 
-The project now has a working backend foundation for discussing IAM domain design, persistence, application services, REST APIs, OAuth2/JWT concepts, scope-based authorization, audit logging, MFA, SCIM foundations, OpenAPI documentation, and CI/CD practice.
+It has a working backend foundation for IAM domain modeling, persistence,
+application services, REST APIs, OAuth2/JWT concepts, scope-based API
+authorization, audit logging, MFA, SCIM-style provisioning foundations, OpenAPI
+documentation, and CI/CD practice.
 
-This is a prototype milestone, not a formal `v0.1.0` release.
+It is not production-ready, not a complete usable IAM product, and does not yet
+include user login flows or a frontend.
 
-## Completed Foundation Work
+This roadmap is for continued development planning. It is not a release record.
+
+## Implemented Foundations
 
 ### Project Baseline
 
-Status: Done
+- Spring Boot project baseline.
+- Maven Wrapper.
+- Docker Compose for PostgreSQL and Redis.
+- Health check endpoint.
+- Local development workflow.
 
-- Spring Boot project created.
-- Maven Wrapper added.
-- Docker Compose added for PostgreSQL and Redis.
-- Health check endpoint added.
-- Local development baseline verified.
+### Core IAM Domain Model
 
-### Core IAM Domain And Persistence
+- Tenant.
+- User.
+- Client.
+- Role.
+- Permission.
+- Group.
+- Group membership.
+- Audit log.
 
-Status: Done
+### Persistence
 
-- Core entities added for tenants, users, clients, roles, permissions, groups, and audit logs.
-- Flyway migrations introduced.
-- Spring Data JPA repositories added.
-- PostgreSQL Testcontainers persistence tests added.
+- Flyway-managed database migrations.
+- Spring Data JPA repositories.
+- PostgreSQL persistence tests with Testcontainers.
 
-### Application Service Layer
+### Application Services
 
-Status: Done
-
-- Use-case-oriented services added.
-- Tenant boundary validation added for role assignment and group membership behavior.
-- Audit event creation integrated into important workflows.
+- Use-case-oriented service layer.
+- Tenant boundary validation for selected workflows.
+- Service-level orchestration for core IAM operations.
 
 ### REST API Layer
 
-Status: Done
-
-- REST controllers added for core IAM workflows.
-- DTOs and validation added.
-- Centralized error handling added.
-- OpenAPI documentation added through Swagger UI.
+- REST controllers for core IAM management workflows.
+- DTO-based request and response models.
+- Validation.
+- Centralized error handling.
+- OpenAPI documentation.
 
 ### OAuth2, JWT, And API Authorization
 
-Status: Done
+- Spring Authorization Server foundation.
+- Registered client support.
+- JWT support.
+- JWK support.
+- Scope-based API authorization using `iam.read` and `iam.write`.
 
-- Spring Authorization Server foundation added.
-- JWT and JWK support added.
-- API authorization added with `iam.read` and `iam.write` scopes.
-- Health endpoint remains public for local checks.
+### Audit Logging
 
-### Audit, MFA, And Secret Protection
+- Audit log model and persistence.
+- Audit events for important IAM and administration operations.
+- Foundation for future traceability and operational review.
 
-Status: Done
+### MFA And Secret Protection
 
-- Audit logging added for important IAM and administration events.
-- TOTP MFA enrollment and verification added.
-- MFA verification hardening and test coverage added.
-- Stored MFA secret encryption foundation added.
+- TOTP MFA enrollment and verification.
+- TOTP verification hardening.
+- Protection against exposing MFA secrets in normal responses.
+- Encryption foundation for stored MFA secrets.
 
 ### SCIM Foundation
 
-Status: Done
+- SCIM-style user provisioning foundation.
+- SCIM-style group provisioning foundation.
+- Tenant consistency checks for group membership behavior.
 
-- SCIM-style user provisioning foundation added.
-- SCIM-style group provisioning foundation added.
-- Tenant consistency checks improved for group membership operations.
+### Documentation And CI/CD
 
-### CI/CD And Documentation
+- OpenAPI / Swagger UI documentation.
+- GitLab CI pipeline for test, package, and Docker image build stages.
+- Project vision, roadmap, architecture, and security design documentation.
 
-Status: Done
-
-- GitLab CI pipeline added for test, package, and Docker image build stages.
-- GitHub/GitLab workflow documented.
-- Architecture, security design, roadmap, project vision, and interview notes added.
-- Historical foundation-stage notes moved under `docs/archive/`.
-
-## Next Phase
+## Next Development Direction
 
 ### User Authentication And Login Foundation
 
-Status: Next
+The next development direction is to add a focused foundation for user
+authentication and login behavior.
 
-Goal:
-
-- Add a focused foundation for user authentication and login behavior.
-- Keep the scope small and explainable.
-- Avoid claiming complete IAM product readiness.
+The goal is to introduce login-related backend behavior without claiming that
+the project has become a complete IAM product.
 
 Candidate work:
 
-- Define the login use case boundaries.
+- Define login use case boundaries.
+- Decide how login integrates with Spring Authorization Server.
 - Add password handling foundations if needed.
-- Clarify how login integrates with the authorization server.
+- Add account state concepts only if required by the login workflow.
 - Add tests for security-sensitive behavior.
-- Update documentation after implementation.
+- Update architecture and security documentation after implementation.
 
-## Future Backlog
+## Future Planned Work
 
-Future work may include:
+Future development may include:
 
 - Account lifecycle flows.
 - Password policy design.
 - Stronger client secret handling.
 - Token lifecycle improvements.
+- More detailed authorization policy.
 - Expanded SCIM compatibility.
 - External secret management and key rotation design.
 - Docker image publishing to GitLab Container Registry.
 - Deployment pipeline practice.
 - CI/CD secret management.
-- Observability and operational runbook notes.
+- Observability and operational runbook-style documentation.
 
-These items are backlog candidates, not committed release scope.
+These items are planning candidates and may change as the project evolves.
 
-## Historical Notes
+## Archived Historical Notes
 
-Historical foundation-stage summaries live under:
+Historical foundation-stage notes are kept under `docs/archive/` so the active
+documentation can stay focused on current context and future development.
 
 - [Foundation Stage Summary](archive/foundation-stage/FOUNDATION_SUMMARY.md)
 - [Foundation Changelog](archive/foundation-stage/FOUNDATION_CHANGELOG.md)

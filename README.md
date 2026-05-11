@@ -1,29 +1,36 @@
 # international-iam-platform
 
-`international-iam-platform` is a Spring Boot IAM backend foundation prototype.
+`international-iam-platform` is an IAM backend foundation prototype built with
+Java 21 and Spring Boot.
 
-It demonstrates identity and access management backend concepts in a compact, interview-friendly codebase: domain modeling, persistence, REST APIs, OAuth2/JWT foundations, scope-based API authorization, audit logging, TOTP MFA, SCIM-style provisioning foundations, OpenAPI documentation, and GitLab CI/CD practice.
+The project is intended to explore and document the backend foundations of an
+identity and access management system. It is useful for code review,
+architecture discussion, continued development planning, and future AI-assisted
+context recovery.
 
-The project is production-inspired, but it is not a complete production-ready IAM product and it is not being presented as a formal `v0.1.0` release.
+The project is not production-ready. It is not a complete usable IAM product
+yet, and it does not currently include user login flows or a frontend.
 
 ## Current Status
 
-The IAM backend foundation stage is complete.
+The current implementation includes:
 
-Implemented foundations include:
-
-- Core IAM domain model for tenants, users, clients, roles, permissions, groups, and audit logs.
-- Flyway-managed PostgreSQL schema migrations.
-- Spring Data JPA repositories with PostgreSQL Testcontainers persistence tests.
-- Application services with tenant boundary validation.
-- REST API layer with DTOs, validation, centralized error handling, and OpenAPI documentation.
-- OAuth2 Authorization Server foundation with JWT and JWK support.
+- Core IAM domain model for tenants, users, clients, roles, permissions,
+  groups, and audit logs.
+- Flyway-managed PostgreSQL database migrations.
+- Spring Data JPA repositories and PostgreSQL Testcontainers persistence tests.
+- Application service layer for use-case orchestration and tenant boundary
+  validation.
+- REST API layer with DTOs, validation, centralized error handling, and
+  OpenAPI documentation.
+- OAuth2 Authorization Server foundation.
+- JWT and JWK support.
 - Scope-based API authorization using `iam.read` and `iam.write`.
 - Audit logging for important IAM and administration events.
 - TOTP MFA enrollment and verification.
 - Encryption foundation for stored MFA secrets.
 - SCIM-style user and group provisioning foundation.
-- GitLab CI/CD pipeline for test, package, and local Docker image build stages.
+- GitLab CI/CD pipeline for test, package, and Docker image build stages.
 
 ## Tech Stack
 
@@ -92,16 +99,16 @@ After the application starts:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-The health endpoint is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes:
+The health endpoint is public. Management APIs under `/api/**` and SCIM APIs
+under `/scim/v2/**` require OAuth2 JWT scopes:
 
 - Read operations require `iam.read`.
 - Write operations require `iam.write`.
 
-## Repository Workflow
+## Roadmap
 
-GitHub is the public portfolio repository. GitLab is used for CI/CD practice.
-
-The current GitLab pipeline runs test, package, and Docker image build stages. The Docker stage builds an image in CI but does not publish it to a registry yet.
+Current progress, the next development direction, and future planned work are
+tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Documentation
 
@@ -109,5 +116,3 @@ The current GitLab pipeline runs test, package, and Docker image build stages. T
 - [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security Design](docs/SECURITY_DESIGN.md)
-- [Interview Notes](docs/INTERVIEW_NOTES.md)
-- [Foundation Stage Summary](docs/archive/foundation-stage/FOUNDATION_SUMMARY.md)
