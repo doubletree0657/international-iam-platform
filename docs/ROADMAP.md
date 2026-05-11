@@ -124,11 +124,3 @@ Future development may include:
 - Observability and operational runbook-style documentation.
 
 These items are planning candidates and may change as the project evolves.
-
-## Archived Historical Notes
-
-Historical foundation-stage notes are kept under `docs/archive/` so the active
-documentation can stay focused on current context and future development.
-
-- [Foundation Stage Summary](archive/foundation-stage/FOUNDATION_SUMMARY.md)
-- [Foundation Changelog](archive/foundation-stage/FOUNDATION_CHANGELOG.md)
