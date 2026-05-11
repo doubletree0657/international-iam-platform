@@ -1,5 +1,6 @@
 package io.github.doubletree.iam.platform.application.service;
 
+import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.repository.ClientRepository;

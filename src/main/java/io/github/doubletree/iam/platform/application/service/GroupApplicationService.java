@@ -1,5 +1,7 @@
 package io.github.doubletree.iam.platform.application.service;
 
+import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.domain.Group;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;

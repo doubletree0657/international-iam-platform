@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.platform.application.service;
+package io.github.doubletree.iam.platform.application.exception;
 
 public class EntityNotFoundException extends RuntimeException {
 

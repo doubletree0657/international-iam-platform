@@ -1,4 +1,4 @@
-package io.github.doubletree.iam.platform.application.service;
+package io.github.doubletree.iam.platform.security.crypto;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

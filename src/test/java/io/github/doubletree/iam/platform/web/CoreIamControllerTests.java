@@ -10,12 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.github.doubletree.iam.platform.authorization.AuthorizationServerConfiguration;
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
-import io.github.doubletree.iam.platform.application.service.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
 import io.github.doubletree.iam.platform.application.service.GroupApplicationService;
 import io.github.doubletree.iam.platform.application.service.PermissionApplicationService;
 import io.github.doubletree.iam.platform.application.service.RoleApplicationService;
 import io.github.doubletree.iam.platform.application.service.TenantApplicationService;
-import io.github.doubletree.iam.platform.application.service.TenantBoundaryViolationException;
+import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.application.service.UserApplicationService;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Group;

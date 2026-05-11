@@ -1,7 +1,7 @@
 package io.github.doubletree.iam.platform.web;
 
-import io.github.doubletree.iam.platform.application.service.EntityNotFoundException;
-import io.github.doubletree.iam.platform.application.service.TenantBoundaryViolationException;
+import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.web.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
