@@ -103,7 +103,7 @@ Current completed work:
 
 Current phase:
 
-- **Phase 14 — GitLab CI/CD: Done**
+- **Phase 14.5 — GitLab Mirror Workflow Documentation: Done**
 
 Next phase:
 
@@ -361,6 +361,18 @@ Goal:
 - Run tests automatically
 - Build application package
 - Build Docker image
+
+---
+
+### Phase 14.5 — GitLab Mirror Workflow Documentation
+
+Status: Done
+
+Goal:
+
+- Document GitHub as the source of truth
+- Document GitLab as the CI/CD mirror repository
+- Explain the GitHub-to-GitLab pipeline workflow
 
 ---
 

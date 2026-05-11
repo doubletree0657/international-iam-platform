@@ -115,13 +115,25 @@ The health check is public. Management APIs under `/api/**` and SCIM APIs under 
 
 ## CI/CD Practice
 
-GitHub is used for public portfolio display. GitLab is used for CI/CD practice.
+GitHub is the source of truth and the main public portfolio repository. GitLab is used as a CI/CD mirror repository for pipeline practice.
+
+Recommended repository workflow:
+
+- Push source changes to GitHub.
+- Let the GitLab mirror sync the repository from GitHub.
+- Let the GitLab pipeline run automatically after the mirror update.
 
 The GitLab pipeline is intentionally minimal:
 
 - `test`: runs `./mvnw test` on JDK 21 with Docker-in-Docker for Testcontainers.
 - `package`: runs `./mvnw package -DskipTests` and stores the built JAR as an artifact.
-- `docker`: builds a local CI Docker image for the Spring Boot application without pushing to a real registry.
+- `docker`: builds a local CI Docker image for the Spring Boot application without pushing it to a Docker registry.
+
+Future CI/CD improvements may include:
+
+- Pushing Docker images to the GitLab Container Registry.
+- Adding a deployment pipeline.
+- Managing CI/CD secrets through GitLab CI/CD variables or another secure secret-management approach.
 
 ## Roadmap
 
