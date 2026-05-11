@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 14.5 — GitLab Mirror Workflow Documentation: Done**
+- **Phase 15 — Project Polish and Interview Readiness: Done**
 
 Next phase:
 
-- **Phase 15 — Project Polish and Interview Readiness**
+- **Phase 16 — Release Preparation**
 
 ---
 
@@ -364,27 +364,39 @@ Goal:
 
 ---
 
-### Phase 14.5 — GitLab Mirror Workflow Documentation
+### Phase 14.5 — GitHub and GitLab Workflow Documentation
 
 Status: Done
 
 Goal:
 
-- Document GitHub as the source of truth
-- Document GitLab as the CI/CD mirror repository
-- Explain the GitHub-to-GitLab pipeline workflow
+- Document GitHub as the public portfolio repository
+- Document GitLab as the CI/CD practice repository
+- Explain the current dual-push workflow
 
 ---
 
 ### Phase 15 — Project Polish and Interview Readiness
 
-Status: Next
+Status: Done
 
 Goal:
 
 - Improve project documentation and explanations
 - Prepare clear portfolio and interview talking points
 - Review consistency across implemented MVP features
+
+---
+
+### Phase 16 — Release Preparation
+
+Status: Next
+
+Goal:
+
+- Prepare the project for a clear portfolio release
+- Review documentation and repository presentation
+- Keep release scope documentation-focused
 
 ---
 

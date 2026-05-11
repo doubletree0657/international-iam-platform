@@ -1,8 +1,8 @@
 # international-iam-platform
 
-`international-iam-platform` is a public portfolio project for a Spring Boot based identity and access management platform. The current baseline establishes project structure, local dependencies, documentation, a simple health check, and the first persistence model for core IAM concepts.
+`international-iam-platform` is a public portfolio project for a Spring Boot based identity and access management platform. It demonstrates IAM domain modeling, REST APIs, OAuth2/JWT concepts, scope-based authorization, audit logging, MFA, SCIM foundations, persistence testing, and CI/CD practice.
 
-IAM business features are intentionally out of scope for the current phase. Authentication, login, OAuth2 flows, authorization checks, MFA, SCIM, service-layer workflows, and REST APIs for IAM entities will be added later.
+The project is production-inspired, but it is not a production IAM system.
 
 ## Tech Stack
 
@@ -12,10 +12,16 @@ IAM business features are intentionally out of scope for the current phase. Auth
 - Spring Data JPA
 - Spring Data Redis
 - Spring Modulith
+- Spring Security
+- Spring Authorization Server
 - PostgreSQL
 - Redis
+- Flyway
+- Testcontainers
 - Maven Wrapper
 - Docker Compose
+- OpenAPI / Swagger UI
+- GitLab CI/CD
 
 ## Local Development Environment
 
@@ -29,13 +35,15 @@ The project uses the Maven Wrapper, so a local Maven installation is not require
 
 ## Current Domain Model
 
-The Phase 2 model defines JPA entities only. It does not implement business logic, controllers, DTOs, repositories, authentication, or authorization flows.
+The current model represents core IAM concepts with tenant-aware relationships.
 
 - `Tenant`: an organization or customer boundary.
 - `User`: an account principal that belongs to one tenant.
-- `Client`: an OAuth2 client registration shell that belongs to one tenant.
+- `Client`: an OAuth2 client registration that belongs to one tenant.
 - `Role`: a tenant-scoped access grouping assignable to users.
 - `Permission`: a named capability assignable to roles.
+- `Group`: a SCIM-style grouping concept for provisioning foundations.
+- `AuditLog`: a record of important IAM and administration events.
 
 Relationships:
 
@@ -44,6 +52,7 @@ Relationships:
 - A `Role` belongs to one `Tenant`.
 - A `User` can have multiple `Role` entries.
 - A `Role` can have multiple `Permission` entries.
+- A `Group` belongs to one `Tenant` and can contain users.
 
 All domain entities use UUID primary keys and basic timestamp metadata.
 
@@ -113,15 +122,22 @@ http://localhost:8080/v3/api-docs
 
 The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes: write operations require `iam.write`, and read operations require `iam.read`.
 
+## Project Documentation
+
+- [Project Vision](docs/PROJECT_VISION.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security Design](docs/SECURITY_DESIGN.md)
+- [Interview Notes](docs/INTERVIEW_NOTES.md)
+
 ## CI/CD Practice
 
-GitHub is the source of truth and the main public portfolio repository. GitLab is used as a CI/CD mirror repository for pipeline practice.
+GitHub is the main public portfolio repository. GitLab is used for CI/CD practice.
 
-Recommended repository workflow:
+Current repository workflow:
 
-- Push source changes to GitHub.
-- Let the GitLab mirror sync the repository from GitHub.
-- Let the GitLab pipeline run automatically after the mirror update.
+- Push source changes to GitHub for portfolio display.
+- Push the same branch to GitLab for CI/CD practice.
+- Let the GitLab pipeline run after the GitLab push.
 
 The GitLab pipeline is intentionally minimal:
 
@@ -131,6 +147,7 @@ The GitLab pipeline is intentionally minimal:
 
 Future CI/CD improvements may include:
 
+- Configuring GitLab repository mirroring from GitHub if available.
 - Pushing Docker images to the GitLab Container Registry.
 - Adding a deployment pipeline.
 - Managing CI/CD secrets through GitLab CI/CD variables or another secure secret-management approach.
