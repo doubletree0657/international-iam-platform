@@ -113,6 +113,16 @@ http://localhost:8080/v3/api-docs
 
 The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes: write operations require `iam.write`, and read operations require `iam.read`.
 
+## CI/CD Practice
+
+GitHub is used for public portfolio display. GitLab is used for CI/CD practice.
+
+The GitLab pipeline is intentionally minimal:
+
+- `test`: runs `./mvnw test` on JDK 21 with Docker-in-Docker for Testcontainers.
+- `package`: runs `./mvnw package -DskipTests` and stores the built JAR as an artifact.
+- `docker`: builds a local CI Docker image for the Spring Boot application without pushing to a real registry.
+
 ## Roadmap
 
 - Phase 1: Clean public baseline, documentation, local dependencies, and health check. Done.

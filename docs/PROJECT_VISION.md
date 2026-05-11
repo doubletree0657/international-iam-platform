@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 13 — OpenAPI Documentation: Done**
+- **Phase 14 — GitLab CI/CD: Done**
 
 Next phase:
 
-- **Phase 14 — GitLab CI/CD**
+- **Phase 15 — Project Polish and Interview Readiness**
 
 ---
 
@@ -353,7 +353,7 @@ Goal:
 
 ### Phase 14 — GitLab CI/CD
 
-Status: Next
+Status: Done
 
 Goal:
 
@@ -361,6 +361,18 @@ Goal:
 - Run tests automatically
 - Build application package
 - Build Docker image
+
+---
+
+### Phase 15 — Project Polish and Interview Readiness
+
+Status: Next
+
+Goal:
+
+- Improve project documentation and explanations
+- Prepare clear portfolio and interview talking points
+- Review consistency across implemented MVP features
 
 ---
 

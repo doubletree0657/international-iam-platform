@@ -1,0 +1,7 @@
+.git
+.gitlab-ci.yml
+.m2
+.idea
+*.iml
+target/*
+!target/*.jar

@@ -1,0 +1,53 @@
+stages:
+  - test
+  - package
+  - docker
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  key: "$CI_PROJECT_NAME-maven"
+  paths:
+    - .m2/repository
+
+test:
+  stage: test
+  image: eclipse-temurin:21-jdk
+  services:
+    - name: docker:24-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    TESTCONTAINERS_HOST_OVERRIDE: docker
+  before_script:
+    - chmod +x ./mvnw
+  script:
+    - ./mvnw test
+
+package:
+  stage: package
+  image: eclipse-temurin:21-jdk
+  before_script:
+    - chmod +x ./mvnw
+  script:
+    - ./mvnw package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
+
+docker:
+  stage: docker
+  image: docker:24
+  services:
+    - name: docker:24-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  dependencies:
+    - package
+  script:
+    - docker build --pull -t "$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA" .
