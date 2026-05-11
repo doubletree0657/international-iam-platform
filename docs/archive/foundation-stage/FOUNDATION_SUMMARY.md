@@ -1,12 +1,12 @@
-# Release Notes: v0.1.0
+# Foundation Stage Summary
 
 ## Summary
 
-`v0.1.0` is the first portfolio-ready MVP of `international-iam-platform`. It presents a Spring Boot IAM backend with production-inspired architecture, security concepts, persistence testing, API documentation, and CI/CD practice.
+This document summarizes the completed IAM backend foundation stage of `international-iam-platform`.
 
-The release is designed for portfolio review and interview discussion. It is not intended to be used as a production IAM system.
+It is not a formal release note and does not mark a published `v0.1.0` release. The project is currently an IAM backend foundation prototype for portfolio and interview discussion.
 
-## What This Release Contains
+## What The Foundation Stage Contains
 
 - Core IAM domain model for tenants, users, clients, roles, permissions, groups, and audit logs.
 - Flyway-managed database schema changes.
@@ -27,7 +27,7 @@ The release is designed for portfolio review and interview discussion. It is not
 ## What Can Be Demonstrated
 
 - Running local dependencies with Docker Compose.
-- Running the full test suite with Maven.
+- Running the test suite with Maven and Docker/Testcontainers.
 - Explaining the modular monolith architecture.
 - Reviewing the request flow from controller to DTO, application service, repository, and entity.
 - Discussing tenant-aware IAM modeling.
@@ -38,7 +38,7 @@ The release is designed for portfolio review and interview discussion. It is not
 
 ## Not Production-Grade Yet
 
-This release intentionally does not include:
+The foundation prototype intentionally does not include:
 
 - Production-ready login and account lifecycle flows.
 - Enterprise-grade key rotation or external secret management.
@@ -50,9 +50,10 @@ This release intentionally does not include:
 
 ## Planned Future Improvements
 
-- Prepare a clearer repository release package and tag.
-- Add Docker image publishing to GitLab Container Registry.
-- Add a deployment pipeline when the project is ready for deployment practice.
-- Improve CI/CD secret management.
-- Expand account lifecycle and authentication flows.
-- Improve SCIM compatibility and operational documentation.
+- User authentication and login foundation.
+- Account lifecycle and password handling.
+- Docker image publishing to GitLab Container Registry.
+- Deployment pipeline practice.
+- Improved CI/CD secret management.
+- Expanded SCIM compatibility.
+- Operational documentation.

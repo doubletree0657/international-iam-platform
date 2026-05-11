@@ -1,12 +1,30 @@
 # international-iam-platform
 
-`international-iam-platform` is a public portfolio project for a Spring Boot based identity and access management platform. It demonstrates IAM domain modeling, REST APIs, OAuth2/JWT concepts, scope-based authorization, audit logging, MFA, SCIM foundations, persistence testing, and CI/CD practice.
+`international-iam-platform` is an IAM backend foundation prototype built with Spring Boot.
 
-The project is production-inspired, but it is not a production IAM system.
+It demonstrates core identity and access management backend concepts, including domain modeling, persistence, REST APIs, OAuth2/JWT foundations, scope-based authorization, audit logging, MFA, SCIM-style provisioning foundations, OpenAPI documentation, and CI/CD practice.
 
-## Release Status
+The project is production-inspired, but it is not production-ready and is not a complete usable IAM product.
 
-`v0.1.0` is the first portfolio-ready MVP release. It is suitable for code review, architecture discussion, and interview preparation.
+## Current Status
+
+The backend foundation stage is complete. No formal release is being published yet.
+
+Implemented capabilities include:
+
+- Core IAM domain model for tenants, users, clients, roles, permissions, groups, and audit logs.
+- Flyway-managed database migrations.
+- Spring Data JPA repositories and PostgreSQL Testcontainers persistence tests.
+- Application service layer with tenant boundary validation.
+- REST API layer with DTOs, validation, and centralized error handling.
+- OAuth2 Authorization Server foundation.
+- JWT / JWK support.
+- Scope-based API authorization with `iam.read` and `iam.write`.
+- Audit logging for important IAM and administration events.
+- TOTP MFA with MFA secret encryption.
+- SCIM-style user and group provisioning foundation.
+- OpenAPI documentation through Swagger UI.
+- GitLab CI/CD pipeline for test, package, and local Docker image build stages.
 
 ## Tech Stack
 
@@ -27,7 +45,7 @@ The project is production-inspired, but it is not a production IAM system.
 - OpenAPI / Swagger UI
 - GitLab CI/CD
 
-## Local Development Environment
+## Local Development
 
 Required tools:
 
@@ -37,44 +55,19 @@ Required tools:
 
 The project uses the Maven Wrapper, so a local Maven installation is not required.
 
-## Current Domain Model
-
-The current model represents core IAM concepts with tenant-aware relationships.
-
-- `Tenant`: an organization or customer boundary.
-- `User`: an account principal that belongs to one tenant.
-- `Client`: an OAuth2 client registration that belongs to one tenant.
-- `Role`: a tenant-scoped access grouping assignable to users.
-- `Permission`: a named capability assignable to roles.
-- `Group`: a SCIM-style grouping concept for provisioning foundations.
-- `AuditLog`: a record of important IAM and administration events.
-
-Relationships:
-
-- A `User` belongs to one `Tenant`.
-- A `Client` belongs to one `Tenant`.
-- A `Role` belongs to one `Tenant`.
-- A `User` can have multiple `Role` entries.
-- A `Role` can have multiple `Permission` entries.
-- A `Group` belongs to one `Tenant` and can contain users.
-
-All domain entities use UUID primary keys and basic timestamp metadata.
-
-## Start Local Dependencies
-
 Start PostgreSQL and Redis:
 
 ```bash
 docker compose up -d
 ```
 
-Stop them when finished:
+Stop local dependencies:
 
 ```bash
 docker compose down
 ```
 
-Local Docker Compose services:
+Local services:
 
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
@@ -86,6 +79,8 @@ The Compose credentials are local development values only and must not be reused
 ```bash
 ./mvnw test
 ```
+
+Some tests use Testcontainers and require Docker access.
 
 ## Run the Application
 
@@ -124,45 +119,27 @@ The OpenAPI JSON document is available at:
 http://localhost:8080/v3/api-docs
 ```
 
-The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes: write operations require `iam.write`, and read operations require `iam.read`.
+The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes:
 
-## Project Documentation
+- Read operations require `iam.read`.
+- Write operations require `iam.write`.
 
-- [Project Vision](docs/PROJECT_VISION.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security Design](docs/SECURITY_DESIGN.md)
-- [Interview Notes](docs/INTERVIEW_NOTES.md)
-- [Release Notes v0.1.0](docs/RELEASE_NOTES_v0.1.0.md)
-
-## CI/CD Practice
+## GitHub and GitLab Workflow
 
 GitHub is the main public portfolio repository. GitLab is used for CI/CD practice.
 
-Current repository workflow:
+Current workflow:
 
 - Push source changes to GitHub for portfolio display.
 - Push the same branch to GitLab for CI/CD practice.
 - Let the GitLab pipeline run after the GitLab push.
 
-The GitLab pipeline is intentionally minimal:
+The GitLab pipeline currently runs test, package, and Docker image build stages. The Docker stage builds an image in CI but does not push it to a registry.
 
-- `test`: runs `./mvnw test` on JDK 21 with Docker-in-Docker for Testcontainers.
-- `package`: runs `./mvnw package -DskipTests` and stores the built JAR as an artifact.
-- `docker`: builds a local CI Docker image for the Spring Boot application without pushing it to a Docker registry.
+## Documentation
 
-Future CI/CD improvements may include:
-
-- Configuring GitLab repository mirroring from GitHub if available.
-- Pushing Docker images to the GitLab Container Registry.
-- Adding a deployment pipeline.
-- Managing CI/CD secrets through GitLab CI/CD variables or another secure secret-management approach.
-
-## Roadmap
-
-- Phase 1: Clean public baseline, documentation, local dependencies, and health check. Done.
-- Phase 2: Domain model and persistence boundaries for core IAM concepts. In progress.
-- Phase 3: Authentication and authorization flows.
-- Phase 4: Multi-tenancy, role, and permission management.
-- Phase 5: OAuth2 authorization server hardening.
-- Phase 6: MFA and account recovery flows.
-- Phase 7: SCIM provisioning and operational readiness.
+- [Project Vision](docs/PROJECT_VISION.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security Design](docs/SECURITY_DESIGN.md)
+- [Interview Notes](docs/INTERVIEW_NOTES.md)

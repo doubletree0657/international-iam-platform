@@ -1,10 +1,12 @@
 # Changelog
 
-## v0.1.0 - First Portfolio-Ready MVP
+No formal release has been published yet.
 
-This release marks the first portfolio-ready version of `international-iam-platform`.
+## Foundation Stage - Completed
 
-Included in this release:
+The IAM backend foundation stage is complete. This is a prototype milestone, not a formal `v0.1.0` release.
+
+Included in the foundation stage:
 
 - Project baseline with Spring Boot, Maven Wrapper, Docker Compose, PostgreSQL, and Redis.
 - Core IAM domain model for tenants, users, clients, roles, permissions, groups, and audit logs.
@@ -19,4 +21,4 @@ Included in this release:
 - MFA secret encryption foundation.
 - SCIM-style provisioning foundation for users and groups.
 - GitLab CI/CD pipeline with test, package, and Docker image build stages.
-- Architecture, security design, release, and interview documentation.
+- Architecture, security design, roadmap, and interview documentation.
