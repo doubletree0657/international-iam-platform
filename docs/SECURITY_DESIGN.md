@@ -2,17 +2,21 @@
 
 ## Overview
 
-The security design is production-inspired but intentionally scoped for a portfolio project. It demonstrates OAuth2, JWT-based API protection, tenant boundary checks, audit logging, and MFA concepts without claiming to be a production IAM system.
+The security design is production-inspired and intentionally scoped for an IAM backend foundation prototype.
+
+The project demonstrates OAuth2 concepts, JWT-based API protection, tenant boundary checks, audit logging, TOTP MFA, and MFA secret encryption. It does not claim production-grade IAM security.
 
 ## OAuth2 Authorization Server
 
-The project includes Spring Authorization Server support. This provides the foundation for OAuth2 flows, registered clients, token issuing, and future authentication improvements.
+Spring Authorization Server provides the OAuth2 foundation. The current implementation supports registered clients, token issuing foundations, and integration points for future login and authentication improvements.
 
-## JWT and JWK Support
+This is a foundation, not a complete product-grade authorization server deployment.
 
-Access tokens are represented as JWTs. JWK support provides signing-key metadata needed by resource servers and clients that validate tokens.
+## JWT And JWK Support
 
-This is currently suitable for learning and demonstration. Production key rotation, external key management, and operational controls are future work.
+Access tokens are represented as JWTs. JWK support exposes signing-key metadata needed by clients or resource servers that validate tokens.
+
+Future production-oriented work would need stronger key lifecycle management, including key rotation, external key storage, operational controls, and incident response procedures.
 
 ## Scope-Based API Authorization
 
@@ -20,36 +24,46 @@ Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2
 
 - Read operations require `iam.read`.
 - Write operations require `iam.write`.
-- The health endpoint remains public for simple local checks.
+- The health endpoint remains public for local checks.
+
+This demonstrates coarse-grained API authorization. More detailed authorization decisions may be added in future phases.
 
 ## Tenant Boundary Validation
 
-Tenant boundary validation is handled in the application service layer. The project prevents cross-tenant role assignment and validates tenant consistency in group membership operations.
+Tenant boundary validation is handled in application services. Current checks prevent cross-tenant role assignment and validate tenant consistency in group membership operations.
 
-This keeps authorization-sensitive business rules close to the use cases that need them.
+These checks are treated as business rules, not just web-layer concerns, because tenant isolation must be enforced close to the use cases that change state.
 
 ## Audit Logging
 
-Audit logging records important IAM and administration events, such as user creation, role assignment, permission changes, client creation, and authentication-related activity.
+Audit logging records important IAM and administration events, including user, role, permission, client, MFA, and SCIM-related activity.
 
-The audit model supports interview discussion about traceability, security review, and operational visibility.
+The current audit design supports traceability and interview discussion. It is not yet a complete compliance logging, retention, alerting, or SIEM integration solution.
 
-## MFA TOTP
+## MFA And Secret Protection
 
-The project includes TOTP-based MFA enrollment and verification. The implementation follows standard TOTP concepts and includes test coverage for known verification behavior.
+The project includes TOTP-based MFA enrollment and verification. MFA verification has targeted test coverage, and stored MFA secrets are encrypted before persistence.
 
-## MFA Secret Encryption
+The current encryption setup is suitable for local development and prototype discussion. Production use would require stronger key management, rotation, access control, monitoring, and recovery procedures.
 
-Stored MFA secrets are encrypted before persistence. Local development keeps key configuration simple, while the design leaves room for stronger production secret management later.
+## Current Security Boundaries
+
+- `/api/health` is public.
+- `/api/**` requires JWT scope authorization.
+- `/scim/v2/**` requires JWT scope authorization.
+- Application services enforce tenant consistency for selected workflows.
+- Sensitive values such as MFA secrets are not returned in normal user responses.
 
 ## Not Production-Grade Yet
 
 The project intentionally does not yet include:
 
-- Production-ready user login and account lifecycle flows.
+- Complete production login and account lifecycle flows.
 - Enterprise-grade key rotation.
 - External secret management.
-- Full production observability and alerting.
+- Full token lifecycle controls.
+- Complete fine-grained authorization policy.
+- Production observability and alerting.
 - Deployment hardening.
 - Complete SCIM enterprise behavior.
 
@@ -60,4 +74,4 @@ The project intentionally does not yet include:
 - Keep tenant boundary checks explicit and testable.
 - Keep local credentials separate from production secrets.
 - Do not commit real CI/CD secrets.
-- Prefer clear, explainable security design over hidden complexity.
+- Prefer clear, reviewable security behavior over hidden complexity.

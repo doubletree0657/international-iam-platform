@@ -2,68 +2,96 @@
 
 ## Short Introduction
 
-`international-iam-platform` is a Spring Boot IAM portfolio project. It demonstrates backend design, OAuth2 concepts, tenant-aware access control, audit logging, MFA, persistence testing, OpenAPI documentation, Docker-based local development, and GitLab CI/CD practice.
+`international-iam-platform` is a Java 21 and Spring Boot IAM backend foundation prototype.
 
-## Architecture Explanation
+It demonstrates backend architecture, IAM domain modeling, PostgreSQL persistence, REST APIs, OAuth2/JWT foundations, scope-based API authorization, audit logging, TOTP MFA, SCIM-style provisioning foundations, OpenAPI documentation, Docker-based local development, and GitLab CI/CD practice.
 
-The project follows a modular monolith direction. It runs as one application, but the code is separated into domain entities, repositories, application services, web controllers, authorization configuration, audit, MFA, and SCIM areas.
+It is production-inspired, but it is not a complete production-ready IAM product.
 
-The main flow is:
+## One-Minute Explanation
 
-```text
-Controller -> DTO -> Application Service -> Repository -> Entity
-```
+I built this project as a portfolio IAM backend foundation. The goal was to show realistic identity and access management backend concepts without pretending the project is a finished enterprise product.
 
-This structure keeps the project easy to run locally while still showing clear backend boundaries.
+The architecture is a modular monolith. A typical request goes from controller to DTO, application service, repository, and entity. I chose this structure because it keeps the project easy to run and explain while still separating domain, persistence, web, security, audit, MFA, and SCIM responsibilities.
 
-## Key Technical Highlights
+The current foundation includes OAuth2 Authorization Server support, JWT/JWK support, scope-based API authorization, tenant boundary validation, audit logging, TOTP MFA with encrypted MFA secrets, SCIM-style user and group provisioning foundations, OpenAPI documentation, and GitLab CI/CD.
+
+## Technical Highlights
 
 - Java 21 and Spring Boot 3.5.
-- Spring Data JPA with PostgreSQL.
-- Flyway database migrations.
-- Persistence tests with PostgreSQL Testcontainers.
-- REST APIs with DTOs and validation.
+- Modular monolith structure.
+- PostgreSQL with Flyway migrations.
+- Spring Data JPA repositories.
+- PostgreSQL Testcontainers persistence tests.
+- REST APIs with DTOs, validation, and centralized error handling.
 - OpenAPI documentation through Swagger UI.
-- Docker Compose for local dependencies.
-- GitLab CI/CD stages for test, package, and Docker image build.
+- Docker Compose for local PostgreSQL and Redis.
+- GitLab CI/CD for test, package, and Docker image build stages.
 
 ## IAM And Security Highlights
 
+- Core IAM model for tenants, users, clients, roles, permissions, groups, and audit logs.
 - OAuth2 Authorization Server foundation.
 - JWT and JWK support.
 - Scope-based API authorization with `iam.read` and `iam.write`.
 - Tenant boundary validation in application services.
-- Audit logging for important IAM events.
-- TOTP-based MFA.
-- Encryption for stored MFA secrets.
+- Audit logging for important IAM and administration events.
+- TOTP MFA enrollment and verification.
+- Encryption foundation for stored MFA secrets.
 - SCIM-style provisioning foundation for users and groups.
+
+## Design Decisions To Explain
+
+### Why Modular Monolith
+
+The project is a modular monolith because the current goal is to demonstrate clean backend boundaries, not distributed-system operations. It avoids premature microservice complexity while keeping the code organized by responsibility.
+
+### Why Application Services
+
+Application services hold use-case logic such as tenant validation, workflow coordination, audit event creation, and MFA behavior. This keeps important business rules outside controllers and close to the state changes they protect.
+
+### Why Testcontainers
+
+Persistence tests use PostgreSQL Testcontainers so JPA mappings and database behavior are tested against a realistic database instead of only an in-memory substitute.
+
+### Why Scope-Based Authorization
+
+The project uses `iam.read` and `iam.write` scopes to demonstrate OAuth2-style API protection. This is intentionally coarse-grained and can evolve into more detailed authorization policy later.
 
 ## Tradeoffs And Limitations
 
-- The project is a modular monolith, not microservices.
-- It is production-inspired, but not production-ready.
-- Secret management is simple for local development.
-- CI/CD builds and tests the project, but does not deploy it.
-- SCIM and authentication flows are intentionally limited.
+- The project is a prototype, not a production IAM platform.
+- User authentication and account lifecycle flows are still limited.
+- Secret and key management are local-development focused.
+- SCIM support is foundational, not complete enterprise SCIM.
+- CI/CD builds and tests the project but does not deploy it.
+- Operational hardening, observability, and runbooks are future work.
 
-## Possible Future Improvements
+## Possible Interview Questions
 
-- Release preparation and cleaner portfolio presentation.
-- Docker image publishing to GitLab Container Registry.
-- Deployment pipeline.
-- Stronger CI/CD secret management.
-- More complete account lifecycle and authentication flows.
-- Expanded SCIM compatibility.
+### How would you make this production-ready?
 
-## Interview Speaking Practice
+I would start with stronger key and secret management, production login and account lifecycle flows, password policy design, token lifecycle controls, more detailed authorization rules, observability, audit retention policy, deployment hardening, CI/CD secret management, and operational runbooks.
 
-- This project is a portfolio IAM backend built with Java 21 and Spring Boot.
-- I chose a modular monolith because it keeps the system simple while still showing clear internal boundaries.
-- The main request flow is Controller, DTO, Application Service, Repository, and Entity.
-- The project uses PostgreSQL, Flyway, and Testcontainers to make persistence behavior realistic and testable.
-- Security is built around OAuth2 concepts, JWT access tokens, and scope-based API authorization.
-- Tenant boundary validation is handled in the application service layer because it is part of the business use case.
-- The MFA feature uses TOTP and encrypts stored MFA secrets.
-- Audit logging records important IAM events for traceability.
+### Why not microservices?
+
+The project does not need independent deployment or scaling boundaries yet. A modular monolith is simpler to run and test while still demonstrating clean internal separation.
+
+### Where is tenant isolation enforced?
+
+Tenant consistency checks are handled in application services for workflows that can cross tenant boundaries, such as role assignment and group membership behavior.
+
+### What does the CI/CD pipeline prove?
+
+It proves the project can run tests, package the application, and build a Docker image in GitLab CI. It does not yet publish images or deploy to an environment.
+
+## Speaking Practice
+
+- This project is an IAM backend foundation prototype, not a finished IAM product.
+- I used Java 21 and Spring Boot because they are common choices for enterprise backend systems.
+- The architecture is a modular monolith with clear internal boundaries.
+- The persistence layer uses PostgreSQL, Flyway, and Testcontainers.
+- Security foundations include OAuth2, JWT, JWK, scope-based authorization, audit logging, and TOTP MFA.
+- Tenant boundary validation belongs in application services because it is part of the business workflow.
+- MFA secrets are encrypted before persistence, but production key management is still future work.
 - GitHub is used for portfolio presentation, and GitLab is used for CI/CD practice.
-- The project is not production-ready yet, but it is designed to explain realistic backend and security tradeoffs.

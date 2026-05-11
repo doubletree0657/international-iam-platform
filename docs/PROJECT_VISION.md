@@ -1,121 +1,89 @@
-# International IAM Platform — Project Vision
+# Project Vision
 
-## Overview
+## Purpose
 
-`international-iam-platform` is a public portfolio project for building and explaining an IAM (Identity and Access Management) backend foundation.
+`international-iam-platform` is a public portfolio project for building, explaining, and evolving an IAM backend foundation.
 
-The project is designed for learning, engineering practice, and international job preparation. It is not a copy of any company system and does not use proprietary source code, internal documents, customer configurations, or real production data.
+The project supports four goals:
 
-The current project state is an IAM backend foundation prototype. It is production-inspired, but it is not production-ready and is not a complete usable IAM product.
+- Future development planning.
+- Portfolio presentation.
+- Interview preparation.
+- Clear context for AI-assisted development.
 
-Detailed phase tracking lives in the [Roadmap](ROADMAP.md).
+The current state is an IAM backend foundation prototype. It is production-inspired, but it is not a complete production-ready IAM product and it is not a formal release.
 
-## Project Goals
+## Product Direction
 
-This project is built to demonstrate and improve:
+The long-term direction is an explainable IAM backend that can demonstrate realistic identity and access management concerns:
 
-- Modern Java backend development.
-- Spring Boot 3 application design.
-- IAM domain modeling.
-- Multi-tenant architecture.
-- Authentication and authorization concepts.
-- OAuth2 / OIDC understanding.
-- Scope-based API authorization.
-- Database migration and persistence testing.
-- Docker-based local development.
-- GitLab CI/CD practice.
-- Technical English communication.
+- Multi-tenant identity modeling.
+- OAuth2 and OIDC concepts.
+- JWT-based API protection.
+- Role, permission, group, and client management.
+- Auditability for important administration and security events.
+- MFA and secret protection foundations.
+- SCIM-style provisioning concepts.
+- API documentation and CI/CD practice.
+
+The project should remain honest about its maturity. Each phase should add a focused backend capability without implying production readiness before the required operational, security, and product hardening exists.
+
+## Engineering Goals
+
+The project is intended to show:
+
+- Modern Java and Spring Boot backend development.
+- Modular monolith architecture.
+- Clear domain modeling before product expansion.
+- Use-case-oriented application services.
+- Database migration discipline with Flyway.
+- Persistence testing with PostgreSQL Testcontainers.
+- Security design tradeoffs that can be explained in interviews.
+- Practical local development with Docker Compose.
+- CI/CD familiarity through GitLab pipelines.
+- Clear technical communication in English.
 
 ## Architecture Direction
 
-The project follows a modular monolith direction.
-
-A modular monolith means:
+The project follows a modular monolith direction:
 
 - One Spring Boot application.
-- Clear internal module boundaries.
-- Simple local development.
-- Easier testing and explanation.
+- Clear internal responsibility boundaries.
+- Simple local development and testing.
 - No early distributed-system complexity.
 
-The project is intentionally not designed as microservices at this stage. The goal is to keep the system explainable while still separating domain logic, application services, web APIs, persistence, security, audit, MFA, and SCIM responsibilities.
-
-## Technology Stack
-
-Core stack:
-
-- Java 21.
-- Spring Boot 3.5.x.
-- Maven Wrapper.
-- PostgreSQL.
-- Redis.
-- Flyway.
-- Docker Compose.
-- JUnit 5.
-- Testcontainers.
-
-Security and API stack:
-
-- Spring Security.
-- Spring Authorization Server.
-- OAuth2.
-- OIDC / JWT foundations.
-- JWK support.
-- OpenAPI / Swagger UI.
-
-Project platforms:
-
-- GitHub for public portfolio display.
-- GitLab for CI/CD practice.
+This is intentional. At the current stage, internal boundaries matter more than service boundaries. A modular monolith keeps the project easier to run, review, and explain while still supporting future extraction if a real product need appears.
 
 ## Development Principles
 
-The project should follow these principles:
-
-- Start simple and evolve gradually.
+- Keep the project explainable.
+- Prefer small, focused phases.
+- Keep documentation synchronized with the current code.
 - Avoid over-engineering.
-- Keep module boundaries understandable.
-- Design the domain model before adding product features.
-- Verify important assumptions with tests.
-- Keep the code explainable.
-- Keep documentation synchronized with the current project state.
-- Review AI-generated code before committing.
+- Test persistence, tenant boundaries, and security-sensitive behavior.
+- Treat AI-generated code as draft work that needs review.
+- Clearly separate prototype behavior from production-ready claims.
 
 ## Security Principles
 
-Security-sensitive features must be introduced carefully.
-
-Important rules:
-
-- Do not store passwords in plain text.
-- Do not store client secrets in plain text.
+- Do not store passwords, client secrets, tokens, or MFA secrets in plain text.
 - Do not log tokens, passwords, client secrets, or MFA secrets.
-- Protect signing keys and secrets.
-- Do not commit CI/CD secrets.
-- Do not use real company or customer data.
-- Clearly distinguish local-development security from production-grade security.
+- Keep tenant boundary checks explicit and testable.
+- Protect signing keys and encryption secrets.
+- Do not commit real CI/CD secrets.
+- Distinguish local development security from production-grade security.
 
-## Non-Goals
+## Non-Goals At This Stage
 
-The project is currently not trying to be:
+The project is not currently trying to be:
 
-- A production-ready IAM system.
-- A full enterprise IAM replacement.
-- A microservices system.
-- A Kubernetes project.
-- A cloud infrastructure project.
-- A clone of any existing company product.
+- A complete production IAM product.
 - A formal product release.
+- A full enterprise IAM replacement.
+- A microservices platform.
+- A Kubernetes or cloud infrastructure project.
+- A clone of any company system.
 
 ## Target Outcome
 
-The project should be:
-
-- Easy to run locally.
-- Easy to understand.
-- Easy to explain in interviews.
-- Structured like a real backend project.
-- Useful for discussing IAM design.
-- Useful for discussing backend architecture.
-- Useful for discussing security tradeoffs.
-- Suitable as an international portfolio project.
+The project should be easy to run, easy to review, and easy to discuss. It should help demonstrate backend engineering judgment, IAM domain understanding, security tradeoff awareness, and the ability to communicate architecture clearly.

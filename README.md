@@ -1,41 +1,36 @@
 # international-iam-platform
 
-`international-iam-platform` is an IAM backend foundation prototype built with Spring Boot.
+`international-iam-platform` is a Spring Boot IAM backend foundation prototype.
 
-It demonstrates core identity and access management backend concepts, including domain modeling, persistence, REST APIs, OAuth2/JWT foundations, scope-based authorization, audit logging, MFA, SCIM-style provisioning foundations, OpenAPI documentation, and CI/CD practice.
+It demonstrates identity and access management backend concepts in a compact, interview-friendly codebase: domain modeling, persistence, REST APIs, OAuth2/JWT foundations, scope-based API authorization, audit logging, TOTP MFA, SCIM-style provisioning foundations, OpenAPI documentation, and GitLab CI/CD practice.
 
-The project is production-inspired, but it is not production-ready and is not a complete usable IAM product.
+The project is production-inspired, but it is not a complete production-ready IAM product and it is not being presented as a formal `v0.1.0` release.
 
 ## Current Status
 
-The backend foundation stage is complete. No formal release is being published yet.
+The IAM backend foundation stage is complete.
 
-Implemented capabilities include:
+Implemented foundations include:
 
 - Core IAM domain model for tenants, users, clients, roles, permissions, groups, and audit logs.
-- Flyway-managed database migrations.
-- Spring Data JPA repositories and PostgreSQL Testcontainers persistence tests.
-- Application service layer with tenant boundary validation.
-- REST API layer with DTOs, validation, and centralized error handling.
-- OAuth2 Authorization Server foundation.
-- JWT / JWK support.
-- Scope-based API authorization with `iam.read` and `iam.write`.
+- Flyway-managed PostgreSQL schema migrations.
+- Spring Data JPA repositories with PostgreSQL Testcontainers persistence tests.
+- Application services with tenant boundary validation.
+- REST API layer with DTOs, validation, centralized error handling, and OpenAPI documentation.
+- OAuth2 Authorization Server foundation with JWT and JWK support.
+- Scope-based API authorization using `iam.read` and `iam.write`.
 - Audit logging for important IAM and administration events.
-- TOTP MFA with MFA secret encryption.
+- TOTP MFA enrollment and verification.
+- Encryption foundation for stored MFA secrets.
 - SCIM-style user and group provisioning foundation.
-- OpenAPI documentation through Swagger UI.
 - GitLab CI/CD pipeline for test, package, and local Docker image build stages.
 
 ## Tech Stack
 
 - Java 21
 - Spring Boot 3.5
-- Spring Web
+- Spring Security and Spring Authorization Server
 - Spring Data JPA
-- Spring Data Redis
-- Spring Modulith
-- Spring Security
-- Spring Authorization Server
 - PostgreSQL
 - Redis
 - Flyway
@@ -53,12 +48,28 @@ Required tools:
 - Docker or a Docker-compatible runtime
 - Git
 
-The project uses the Maven Wrapper, so a local Maven installation is not required.
-
-Start PostgreSQL and Redis:
+Start local dependencies:
 
 ```bash
 docker compose up -d
+```
+
+Run tests:
+
+```bash
+./mvnw test
+```
+
+Run the application:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Health check:
+
+```bash
+curl http://localhost:8080/api/health
 ```
 
 Stop local dependencies:
@@ -72,69 +83,25 @@ Local services:
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 
-The Compose credentials are local development values only and must not be reused as production secrets.
-
-## Run Tests
-
-```bash
-./mvnw test
-```
-
-Some tests use Testcontainers and require Docker access.
-
-## Run the Application
-
-After local dependencies are running:
-
-```bash
-./mvnw spring-boot:run
-```
-
-Health check:
-
-```bash
-curl http://localhost:8080/api/health
-```
-
-Expected response:
-
-```json
-{
-  "status": "UP",
-  "service": "international-iam-platform"
-}
-```
+The Docker Compose credentials are local development values only.
 
 ## API Documentation
 
-Swagger UI is available after the application starts:
+After the application starts:
 
-```text
-http://localhost:8080/swagger-ui/index.html
-```
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-The OpenAPI JSON document is available at:
-
-```text
-http://localhost:8080/v3/api-docs
-```
-
-The health check is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes:
+The health endpoint is public. Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` require OAuth2 JWT scopes:
 
 - Read operations require `iam.read`.
 - Write operations require `iam.write`.
 
-## GitHub and GitLab Workflow
+## Repository Workflow
 
-GitHub is the main public portfolio repository. GitLab is used for CI/CD practice.
+GitHub is the public portfolio repository. GitLab is used for CI/CD practice.
 
-Current workflow:
-
-- Push source changes to GitHub for portfolio display.
-- Push the same branch to GitLab for CI/CD practice.
-- Let the GitLab pipeline run after the GitLab push.
-
-The GitLab pipeline currently runs test, package, and Docker image build stages. The Docker stage builds an image in CI but does not push it to a registry.
+The current GitLab pipeline runs test, package, and Docker image build stages. The Docker stage builds an image in CI but does not publish it to a registry yet.
 
 ## Documentation
 
@@ -143,3 +110,4 @@ The GitLab pipeline currently runs test, package, and Docker image build stages.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security Design](docs/SECURITY_DESIGN.md)
 - [Interview Notes](docs/INTERVIEW_NOTES.md)
+- [Foundation Stage Summary](docs/archive/foundation-stage/FOUNDATION_SUMMARY.md)

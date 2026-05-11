@@ -1,58 +1,96 @@
 # Architecture
 
-## Purpose
+## Overview
 
-`international-iam-platform` is a portfolio IAM backend built with Spring Boot. It demonstrates identity and access management concepts, backend architecture, testing, security design, and CI/CD practice in a project that can be explained clearly in interviews.
+`international-iam-platform` is a Spring Boot IAM backend foundation prototype. It is structured to demonstrate realistic backend boundaries while remaining small enough to run locally and explain in interviews.
 
-The project is not a production IAM product. It is a learning and portfolio system with production-inspired boundaries.
+The system is not a production IAM product. It is a portfolio and learning project with production-inspired architecture.
 
 ## Architecture Style
 
 The project follows a modular monolith direction.
 
-It runs as one Spring Boot application, but the code is organized around clear responsibilities. This keeps local development simple while still showing how a larger backend can separate domain logic, application workflows, web APIs, persistence, and security concerns.
+It runs as one Spring Boot application, with code organized around clear responsibilities:
 
-## Main Request Flow
+- Domain model.
+- Application services.
+- Persistence.
+- Web APIs.
+- Authorization server configuration.
+- Audit logging.
+- MFA.
+- SCIM provisioning foundation.
 
-Typical API requests follow this structure:
+This avoids early microservice complexity while still showing how backend concerns can be separated.
+
+## Request Flow
+
+Typical management and SCIM requests follow this shape:
 
 ```text
 Controller -> DTO -> Application Service -> Repository -> Entity
 ```
 
-- Controllers expose REST and SCIM endpoints.
-- DTOs define request and response shapes.
-- Application services hold use-case logic and validation.
+- Controllers expose HTTP endpoints.
+- DTOs define request and response contracts.
+- Application services coordinate use cases, validation, tenant checks, audit events, and MFA workflows.
 - Repositories provide persistence access through Spring Data JPA.
-- Entities model IAM concepts such as tenants, users, clients, roles, permissions, groups, and audit logs.
+- Entities model IAM concepts and relationships.
 
-## Key Modules
+## Main System Areas
 
-- `domain`: JPA entities and core IAM relationships.
-- `repository`: Spring Data repositories for persistence.
-- `application service`: use-case orchestration, tenant checks, audit events, and MFA workflows.
-- `web`: REST controllers, DTOs, error handling, and OpenAPI configuration.
-- `authorization`: OAuth2 Authorization Server and JWT/JWK configuration.
-- `audit`: audit log model, repository, and application service.
-- `mfa`: TOTP enrollment, verification, and MFA secret protection.
-- `scim`: SCIM-style user and group provisioning foundation.
+### Domain
 
-## Why Not Microservices
+The domain model includes tenants, users, clients, roles, permissions, groups, group memberships, and audit logs. The model is intentionally foundational rather than feature-complete.
 
-The project is intentionally not split into microservices.
+### Persistence
 
-A modular monolith is a better fit for this stage because it keeps the system easy to run, test, and explain. It avoids early distributed-system complexity such as service discovery, network failures, cross-service transactions, and duplicated deployment concerns.
+PostgreSQL is the primary database. Flyway manages schema migrations, and repository behavior is tested with PostgreSQL Testcontainers.
 
-The goal is to demonstrate strong module boundaries before introducing service boundaries.
+### Application Services
+
+Application services hold use-case logic and protect important business boundaries, including tenant consistency checks. This keeps sensitive rules close to the workflows that depend on them.
+
+### Web API
+
+The REST API layer exposes core IAM management endpoints and SCIM-style provisioning endpoints. It uses DTOs, validation, centralized error handling, and OpenAPI documentation.
+
+### Authorization
+
+Spring Authorization Server provides the OAuth2 foundation. JWT and JWK support are present for token-based API authorization.
+
+### Audit
+
+Audit logging records important IAM and administration events. The current design supports traceability discussions but is not a complete compliance or SIEM solution.
+
+### MFA
+
+The MFA area supports TOTP enrollment and verification, with stored MFA secret encryption as a foundation for secret protection.
+
+### SCIM
+
+The SCIM area provides a foundation for user and group provisioning concepts. It is not a complete enterprise SCIM implementation.
+
+## Why A Modular Monolith
+
+A modular monolith is the right fit for the current stage because it:
+
+- Keeps local setup simple.
+- Keeps tests easier to run.
+- Makes the architecture easier to explain.
+- Avoids premature distributed-system concerns.
+- Still supports clear internal boundaries.
+
+Microservices may be considered only if the project grows enough to justify separate deployment, ownership, scaling, or operational boundaries.
 
 ## Current Limitations
 
-- The project is not production hardened.
-- User authentication flows are intentionally limited.
-- Secret and key management is local-development focused.
-- SCIM support is a foundation, not a complete enterprise SCIM implementation.
-- CI/CD builds the application and Docker image, but does not deploy it.
+- User authentication and account lifecycle flows are still limited.
+- Secret and key management are local-development focused.
+- SCIM support is foundational.
+- The CI/CD pipeline builds and tests but does not deploy.
+- Operational hardening, observability, alerting, and runbooks are future work.
 
-## Future Evolution
+## Evolution Path
 
-Future phases may improve release readiness, deployment automation, container registry usage, stronger secret management, more complete IAM flows, and clearer operational documentation.
+The next architectural step is a focused user authentication and login foundation. Later phases may add stronger token lifecycle handling, external secret management, deployment practice, and operational documentation.
