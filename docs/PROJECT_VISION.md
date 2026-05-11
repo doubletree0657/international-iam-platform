@@ -103,11 +103,11 @@ Current completed work:
 
 Current phase:
 
-- **Phase 15 — Project Polish and Interview Readiness: Done**
+- **Phase 16 — Release Preparation: Done**
 
 Next phase:
 
-- **Phase 16 — Release Preparation**
+- **Phase 17 — Future Improvements or Backlog**
 
 ---
 
@@ -390,13 +390,25 @@ Goal:
 
 ### Phase 16 — Release Preparation
 
-Status: Next
+Status: Done
 
 Goal:
 
 - Prepare the project for a clear portfolio release
 - Review documentation and repository presentation
 - Keep release scope documentation-focused
+
+---
+
+### Phase 17 — Future Improvements or Backlog
+
+Status: Next
+
+Goal:
+
+- Track future improvements after the first portfolio-ready release
+- Keep backlog items separate from the v0.1.0 release scope
+- Continue improving the project without changing the release baseline
 
 ---
 

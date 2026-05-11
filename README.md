@@ -4,6 +4,10 @@
 
 The project is production-inspired, but it is not a production IAM system.
 
+## Release Status
+
+`v0.1.0` is the first portfolio-ready MVP release. It is suitable for code review, architecture discussion, and interview preparation.
+
 ## Tech Stack
 
 - Java 21
@@ -128,6 +132,7 @@ The health check is public. Management APIs under `/api/**` and SCIM APIs under 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security Design](docs/SECURITY_DESIGN.md)
 - [Interview Notes](docs/INTERVIEW_NOTES.md)
+- [Release Notes v0.1.0](docs/RELEASE_NOTES_v0.1.0.md)
 
 ## CI/CD Practice
 
