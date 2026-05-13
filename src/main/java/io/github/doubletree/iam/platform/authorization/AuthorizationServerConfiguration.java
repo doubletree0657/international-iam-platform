@@ -59,6 +59,7 @@ public class AuthorizationServerConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("SCOPE_iam.write")
+                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("SCOPE_iam.write")
                         .requestMatchers("/api/**").hasAuthority("SCOPE_iam.read")
                         .requestMatchers(HttpMethod.POST, "/scim/v2/**").hasAuthority("SCOPE_iam.write")
                         .requestMatchers("/scim/v2/**").hasAuthority("SCOPE_iam.read")

@@ -1,6 +1,7 @@
 package io.github.doubletree.iam.platform.web;
 
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.web.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,12 @@ public class RestExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleTenantBoundaryViolation(TenantBoundaryViolationException exception) {
         return new ErrorResponse("tenant_boundary_violation", exception.getMessage());
+    }
+
+    @ExceptionHandler(PasswordValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handlePasswordValidation(PasswordValidationException exception) {
+        return new ErrorResponse("password_validation_error", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

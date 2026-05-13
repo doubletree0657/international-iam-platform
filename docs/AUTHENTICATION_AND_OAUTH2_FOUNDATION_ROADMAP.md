@@ -233,6 +233,14 @@ This phase is complete when:
 - OpenAPI documentation shows the endpoint clearly.
 - Existing APIs remain backward compatible where possible.
 
+## Progress Notes
+
+- Minimal admin-style password update API added at `PUT /api/users/{id}/password`.
+- The endpoint reuses application-layer password validation, encoding, metadata updates, and safe audit logging.
+- Password validation errors are mapped to HTTP 400 responses.
+- Password hashes, raw passwords, credential metadata, and reset flags are not returned in user API responses.
+- Login, self-service password reset, and OAuth2 Authorization Code Flow remain future work.
+
 ## Out of Scope
 
 This phase does not include:

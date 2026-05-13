@@ -1,13 +1,16 @@
 package io.github.doubletree.iam.platform.web;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
 import io.github.doubletree.iam.platform.authorization.AuthorizationServerConfiguration;
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
@@ -171,6 +174,72 @@ class CoreIamControllerTests {
                 .andExpect(jsonPath("$.accountStatus").value("PENDING"))
                 .andExpect(jsonPath("$.roleIds[0]").value(ROLE_ID.toString()))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void updatesUserPassword() throws Exception {
+        User user = user("password-user", "Password User");
+        user.setPasswordHash("{bcrypt}sensitive-hash");
+        when(userApplicationService.updatePassword(eq(USER_ID), eq("new-password-123")))
+                .thenReturn(user);
+
+        mockMvc.perform(put("/api/users/{userId}/password", USER_ID)
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword":"new-password-123",
+                                  "passwordResetRequired":false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.tenantId").value(TENANT_ID.toString()))
+                .andExpect(jsonPath("$.username").value("password-user"))
+                .andExpect(jsonPath("$.displayName").value("Password User"))
+                .andExpect(jsonPath("$.accountStatus").value("PENDING"))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist())
+                .andExpect(jsonPath("$.passwordUpdatedAt").doesNotExist())
+                .andExpect(jsonPath("$.passwordResetRequired").doesNotExist())
+                .andExpect(jsonPath("$.credentialsVersion").doesNotExist());
+    }
+
+    @Test
+    void invalidPasswordUpdateReturnsBadRequest() throws Exception {
+        when(userApplicationService.updatePassword(eq(USER_ID), eq("short")))
+                .thenThrow(new PasswordValidationException("Password must be at least 8 characters"));
+
+        mockMvc.perform(put("/api/users/{userId}/password", USER_ID)
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"newPassword":"short"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("password_validation_error"))
+                .andExpect(jsonPath("$.message").value("Password must be at least 8 characters"));
+    }
+
+    @Test
+    void passwordUpdateCanRequirePasswordReset() throws Exception {
+        when(userApplicationService.updatePassword(eq(USER_ID), eq("temporary-password-123")))
+                .thenReturn(user("temporary-user", "Temporary User"));
+        when(userApplicationService.requirePasswordReset(eq(USER_ID)))
+                .thenReturn(user("temporary-user", "Temporary User"));
+
+        mockMvc.perform(put("/api/users/{userId}/password", USER_ID)
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword":"temporary-password-123",
+                                  "passwordResetRequired":true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+
+        verify(userApplicationService).requirePasswordReset(eq(USER_ID));
     }
 
     @Test
