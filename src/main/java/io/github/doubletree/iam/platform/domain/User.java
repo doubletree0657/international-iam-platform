@@ -2,6 +2,8 @@ package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,6 +47,20 @@ public class User {
     private boolean mfaEnabled;
 
     private String mfaSecret;
+
+    private String passwordHash;
+
+    private Instant passwordUpdatedAt;
+
+    @Column(nullable = false)
+    private boolean passwordResetRequired = true;
+
+    @Column(nullable = false)
+    private int credentialsVersion = 1;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AccountStatus accountStatus = AccountStatus.PENDING;
 
     @ManyToMany
     @JoinTable(
@@ -137,5 +153,45 @@ public class User {
 
     public void setMfaSecret(String mfaSecret) {
         this.mfaSecret = mfaSecret;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Instant getPasswordUpdatedAt() {
+        return passwordUpdatedAt;
+    }
+
+    public void setPasswordUpdatedAt(Instant passwordUpdatedAt) {
+        this.passwordUpdatedAt = passwordUpdatedAt;
+    }
+
+    public boolean isPasswordResetRequired() {
+        return passwordResetRequired;
+    }
+
+    public void setPasswordResetRequired(boolean passwordResetRequired) {
+        this.passwordResetRequired = passwordResetRequired;
+    }
+
+    public int getCredentialsVersion() {
+        return credentialsVersion;
+    }
+
+    public void setCredentialsVersion(int credentialsVersion) {
+        this.credentialsVersion = credentialsVersion;
+    }
+
+    public AccountStatus getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(AccountStatus accountStatus) {
+        this.accountStatus = accountStatus;
     }
 }

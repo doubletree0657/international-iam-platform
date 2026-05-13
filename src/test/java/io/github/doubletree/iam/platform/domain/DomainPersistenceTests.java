@@ -8,6 +8,7 @@ import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -75,6 +76,45 @@ class DomainPersistenceTests {
 
         assertThat(loadedUser.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedUser.getUsername()).isEqualTo("alice");
+    }
+
+    @Test
+    void newUserDefaultsToPendingCredentialState() {
+        Tenant tenant = tenantRepository.save(tenant("User Defaults Tenant"));
+        User user = userRepository.save(user(tenant, "pending-user", "Pending User"));
+
+        flushAndClear();
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+
+        assertThat(loadedUser.getPasswordHash()).isNull();
+        assertThat(loadedUser.getPasswordUpdatedAt()).isNull();
+        assertThat(loadedUser.isPasswordResetRequired()).isTrue();
+        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(1);
+        assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
+    }
+
+    @Test
+    void userPasswordCredentialsAndAccountStatusCanBeSavedAndLoaded() {
+        Tenant tenant = tenantRepository.save(tenant("Credential Tenant"));
+        Instant passwordUpdatedAt = Instant.parse("2026-01-01T00:00:00Z");
+        User user = user(tenant, "credential-user", "Credential User");
+        user.setPasswordHash("$2a$10$storedPasswordHashOnly");
+        user.setPasswordUpdatedAt(passwordUpdatedAt);
+        user.setPasswordResetRequired(false);
+        user.setCredentialsVersion(2);
+        user.setAccountStatus(AccountStatus.LOCKED);
+        User savedUser = userRepository.save(user);
+
+        flushAndClear();
+
+        User loadedUser = userRepository.findById(savedUser.getId()).orElseThrow();
+
+        assertThat(loadedUser.getPasswordHash()).isEqualTo("$2a$10$storedPasswordHashOnly");
+        assertThat(loadedUser.getPasswordUpdatedAt()).isEqualTo(passwordUpdatedAt);
+        assertThat(loadedUser.isPasswordResetRequired()).isFalse();
+        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(2);
+        assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.LOCKED);
     }
 
     @Test

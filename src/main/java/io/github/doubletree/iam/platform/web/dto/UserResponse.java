@@ -1,11 +1,18 @@
 package io.github.doubletree.iam.platform.web.dto;
 
+import io.github.doubletree.iam.platform.domain.AccountStatus;
 import io.github.doubletree.iam.platform.domain.User;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public record UserResponse(UUID id, UUID tenantId, String username, String displayName, Set<UUID> roleIds) {
+public record UserResponse(
+        UUID id,
+        UUID tenantId,
+        String username,
+        String displayName,
+        AccountStatus accountStatus,
+        Set<UUID> roleIds) {
 
     public static UserResponse from(User user) {
         Set<UUID> roleIds = user.getRoles().stream()
@@ -16,6 +23,7 @@ public record UserResponse(UUID id, UUID tenantId, String username, String displ
                 user.getTenant().getId(),
                 user.getUsername(),
                 user.getDisplayName(),
+                user.getAccountStatus(),
                 roleIds);
     }
 }

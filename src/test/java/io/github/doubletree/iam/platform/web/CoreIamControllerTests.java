@@ -115,7 +115,9 @@ class CoreIamControllerTests {
                 .andExpect(jsonPath("$.id").value(USER_ID.toString()))
                 .andExpect(jsonPath("$.tenantId").value(TENANT_ID.toString()))
                 .andExpect(jsonPath("$.username").value("alice"))
-                .andExpect(jsonPath("$.displayName").value("Alice Example"));
+                .andExpect(jsonPath("$.displayName").value("Alice Example"))
+                .andExpect(jsonPath("$.accountStatus").value("PENDING"))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
     @Test
@@ -165,7 +167,9 @@ class CoreIamControllerTests {
                         .with(writeScopeJwt))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(USER_ID.toString()))
-                .andExpect(jsonPath("$.roleIds[0]").value(ROLE_ID.toString()));
+                .andExpect(jsonPath("$.accountStatus").value("PENDING"))
+                .andExpect(jsonPath("$.roleIds[0]").value(ROLE_ID.toString()))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
     @Test

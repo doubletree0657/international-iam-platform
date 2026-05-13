@@ -67,6 +67,16 @@ The current encryption setup is suitable for local development and prototype
 discussion. Production use would require stronger key management, rotation,
 access control, monitoring, and recovery procedures.
 
+## Password Credential Foundation
+
+Passwords must never be stored as plaintext. The current authentication
+foundation introduces storage for a password hash and basic account status only;
+it does not yet implement password encoding, password update APIs, login, or
+password reset flows.
+
+Password encoding and password management logic are planned as follow-up work in
+the authentication roadmap.
+
 ## Current Security Boundaries
 
 - `/api/health` is public.

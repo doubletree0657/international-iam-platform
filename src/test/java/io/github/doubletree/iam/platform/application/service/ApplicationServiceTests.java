@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.application.result.MfaEnrollmentResult;
+import io.github.doubletree.iam.platform.domain.AccountStatus;
 import io.github.doubletree.iam.platform.domain.AuditLog;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Group;
@@ -142,6 +143,9 @@ class ApplicationServiceTests {
         assertThat(loadedUser.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedUser.getUsername()).isEqualTo("alice");
         assertThat(loadedUser.getDisplayName()).isEqualTo("Alice Example");
+        assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
+        assertThat(loadedUser.isPasswordResetRequired()).isTrue();
+        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(1);
     }
 
     @Test
@@ -259,6 +263,25 @@ class ApplicationServiceTests {
                 .extracting(RecordComponent::getName)
                 .doesNotContain("mfaSecret");
         assertThat(response.toString()).doesNotContain(enrollment.secret());
+    }
+
+    @Test
+    void userResponseDoesNotExposePasswordCredentialFields() {
+        Tenant tenant = tenantApplicationService.createTenant("Password Response Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "password-response-user", "Password Response");
+        user.setPasswordHash("$2a$10$sensitiveHash");
+        user.setPasswordUpdatedAt(Instant.parse("2026-01-01T00:00:00Z"));
+        user.setPasswordResetRequired(false);
+        user.setCredentialsVersion(3);
+        User savedUser = userRepository.save(user);
+
+        UserResponse response = UserResponse.from(savedUser);
+
+        assertThat(UserResponse.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .doesNotContain("passwordHash", "passwordUpdatedAt", "passwordResetRequired", "credentialsVersion");
+        assertThat(response.toString()).doesNotContain("$2a$10$sensitiveHash");
+        assertThat(response.accountStatus()).isEqualTo(AccountStatus.PENDING);
     }
 
     @Test
