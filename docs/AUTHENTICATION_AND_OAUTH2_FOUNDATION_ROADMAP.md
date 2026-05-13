@@ -179,6 +179,12 @@ This phase is complete when:
 - Tests verify password update behavior.
 - Tests verify that sensitive values are not exposed through response DTOs.
 
+## Progress Notes
+
+- PasswordEncoder configuration and application-layer password management use cases added.
+- Raw passwords are validated at the application boundary and encoded before persistence.
+- Password API, login flow, MFA-in-login, and OAuth2 Authorization Code Flow remain future work.
+
 ## Out of Scope
 
 This phase does not include:

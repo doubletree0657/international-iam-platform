@@ -23,6 +23,7 @@ import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
+import io.github.doubletree.iam.platform.security.PasswordEncodingConfiguration;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
         ScimController.class,
         RestExceptionHandler.class
 })
-@Import(AuthorizationServerConfiguration.class)
+@Import({AuthorizationServerConfiguration.class, PasswordEncodingConfiguration.class})
 class CoreIamControllerTests {
 
     private static final UUID TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");

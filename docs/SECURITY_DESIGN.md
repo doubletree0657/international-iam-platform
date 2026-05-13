@@ -70,12 +70,14 @@ access control, monitoring, and recovery procedures.
 ## Password Credential Foundation
 
 Passwords must never be stored as plaintext. The current authentication
-foundation introduces storage for a password hash and basic account status only;
-it does not yet implement password encoding, password update APIs, login, or
-password reset flows.
+foundation stores only encoded password hashes and basic account status; it does
+not yet implement password update APIs, login, or password reset flows.
 
-Password encoding and password management logic are planned as follow-up work in
-the authentication roadmap.
+Raw passwords are accepted only at the application service boundary for password
+management use cases. They are validated, encoded before persistence, and must
+never be exposed through APIs, audit logs, application logs, or tests. Password
+hashes are also treated as sensitive and must not be returned through response
+DTOs or written to audit logs.
 
 ## Current Security Boundaries
 
