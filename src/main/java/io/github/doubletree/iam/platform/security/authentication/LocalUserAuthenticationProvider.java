@@ -1,0 +1,84 @@
+package io.github.doubletree.iam.platform.security.authentication;
+
+import io.github.doubletree.iam.platform.application.service.AuditApplicationService;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+@Component
+public class LocalUserAuthenticationProvider implements AuthenticationProvider {
+
+    static final String GENERIC_AUTHENTICATION_FAILURE = "Invalid username or password";
+
+    private final PlatformUserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
+    private final AuditApplicationService auditApplicationService;
+
+    public LocalUserAuthenticationProvider(
+            PlatformUserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder,
+            AuditApplicationService auditApplicationService) {
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
+        this.auditApplicationService = auditApplicationService;
+    }
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        PlatformUserDetails userDetails = loadUser(authentication.getName());
+        String rawPassword = authentication.getCredentials() == null
+                ? ""
+                : authentication.getCredentials().toString();
+
+        if (!canAuthenticate(userDetails) || !passwordMatches(rawPassword, userDetails.password())) {
+            auditAuthenticationFailure(userDetails);
+            throw new BadCredentialsException(GENERIC_AUTHENTICATION_FAILURE);
+        }
+
+        auditApplicationService.recordEvent(
+                userDetails.tenantId(), "USER_AUTHENTICATION_SUCCEEDED", "USER", userDetails.userId());
+        UsernamePasswordAuthenticationToken result = UsernamePasswordAuthenticationToken.authenticated(
+                userDetails, null, userDetails.getAuthorities());
+        result.setDetails(authentication.getDetails());
+        return result;
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
+    private PlatformUserDetails loadUser(String username) {
+        try {
+            return (PlatformUserDetails) userDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException exception) {
+            throw new BadCredentialsException(GENERIC_AUTHENTICATION_FAILURE);
+        }
+    }
+
+    private boolean canAuthenticate(PlatformUserDetails userDetails) {
+        return userDetails.isEnabled() && userDetails.isAccountNonLocked();
+    }
+
+    private boolean passwordMatches(String rawPassword, String passwordHash) {
+        if (!StringUtils.hasText(passwordHash)) {
+            return false;
+        }
+        try {
+            return passwordEncoder.matches(rawPassword, passwordHash);
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private void auditAuthenticationFailure(PlatformUserDetails userDetails) {
+        auditApplicationService.recordEvent(
+                userDetails.tenantId(), "USER_AUTHENTICATION_FAILED", "USER", userDetails.userId());
+    }
+}

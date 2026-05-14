@@ -292,6 +292,15 @@ This phase is complete when:
 - Authentication events are audited safely.
 - Tests cover successful login, wrong password, disabled user, and missing user scenarios.
 
+## Progress Notes
+
+- Spring Security local user authentication foundation added through a platform `UserDetailsService`, local `AuthenticationProvider`, and `AuthenticationManager`.
+- Authentication uses the stored password hash with the configured `PasswordEncoder`.
+- Only `ACTIVE` users with a valid password credential can authenticate.
+- `DISABLED`, `LOCKED`, `PENDING`, missing users, users without password credentials, and wrong passwords are rejected with a generic authentication failure.
+- Existing-user authentication success and failure events are audited without raw passwords or password hashes.
+- MFA login challenge, OAuth2 Authorization Code Flow, consent, and frontend login UI remain future work.
+
 ## Out of Scope
 
 This phase does not include:

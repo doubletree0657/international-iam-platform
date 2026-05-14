@@ -82,6 +82,23 @@ The minimal admin-style password management API updates user passwords through
 the application service layer and returns only the safe user response DTO. It
 does not implement login, public password reset, or account recovery flows.
 
+## Local User Authentication Foundation
+
+Local username and password authentication is connected to Spring Security
+through a platform user loading component and local authentication provider.
+Password verification uses the stored encoded password hash and the configured
+`PasswordEncoder`.
+
+Only users with `ACTIVE` account status and a stored password hash can
+authenticate. `DISABLED`, `LOCKED`, and `PENDING` users are rejected, as are
+users without password credentials. Authentication failures use a generic
+message so callers cannot distinguish missing users from wrong passwords or
+other rejected credential states.
+
+Authentication audit events record existing user resource identifiers and event
+types only. They must not include raw passwords, password hashes, MFA secrets,
+tokens, client secrets, or signing keys.
+
 ## Current Security Boundaries
 
 - `/api/health` is public.
