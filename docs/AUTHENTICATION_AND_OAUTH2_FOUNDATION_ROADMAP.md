@@ -37,9 +37,6 @@ This roadmap does not aim to build a complete commercial IAM product yet. It foc
 
 The current project still lacks:
 
-- Password credential model.
-- Account password authentication.
-- Login flow connected to Spring Security.
 - MFA integration into real login.
 - Complete OAuth2 Authorization Code Flow.
 - Persistent RegisteredClient integration.
@@ -183,7 +180,8 @@ This phase is complete when:
 
 - PasswordEncoder configuration and application-layer password management use cases added.
 - Raw passwords are validated at the application boundary and encoded before persistence.
-- Password API, login flow, MFA-in-login, and OAuth2 Authorization Code Flow remain future work.
+- Password API added in a later phase.
+- MFA-in-login and OAuth2 Authorization Code Flow remain future work.
 
 ## Out of Scope
 
@@ -239,7 +237,8 @@ This phase is complete when:
 - The endpoint reuses application-layer password validation, encoding, metadata updates, and safe audit logging.
 - Password validation errors are mapped to HTTP 400 responses.
 - Password hashes, raw passwords, credential metadata, and reset flags are not returned in user API responses.
-- Login, self-service password reset, and OAuth2 Authorization Code Flow remain future work.
+- Login foundation added in later phases.
+- Self-service password reset and OAuth2 Authorization Code Flow remain future work.
 
 ## Out of Scope
 
@@ -343,6 +342,18 @@ This phase is complete when:
 - Public endpoints and protected endpoints are clearly separated.
 - Tests verify that protected resources require authentication.
 - Documentation explains that this is a minimal login foundation, not a full user-facing frontend.
+
+## Progress Notes
+
+- Spring Security form login is enabled for local platform users through the existing local authentication provider and authentication manager.
+- Successful form login creates an authenticated Spring Security web session.
+- Failed form login uses Spring Security's generic failure redirect behavior and does not distinguish missing users, wrong passwords, invalid account status, or missing password credentials.
+- Only `ACTIVE` users with valid password credentials can log in.
+- `DISABLED`, `LOCKED`, `PENDING`, missing users, users without password credentials, and wrong passwords are rejected.
+- `/api/health` remains public.
+- Management APIs under `/api/**` and SCIM APIs under `/scim/v2/**` remain protected by JWT scope rules; local login sessions do not grant API scopes.
+- Browser requests to Authorization Server authorization endpoints can require interactive login, preparing the backend for future Authorization Code Flow work.
+- The in-memory local-development registered client now includes minimal authorization-code metadata for readiness testing, while persistent registered client modeling remains future work.
 
 ## Out of Scope
 

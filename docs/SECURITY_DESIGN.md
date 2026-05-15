@@ -12,8 +12,8 @@ claim production-grade IAM security.
 ## OAuth2 Authorization Server
 
 Spring Authorization Server provides the OAuth2 foundation. The current
-implementation supports registered clients, token issuing foundations, and
-integration points for future login and authentication improvements.
+implementation supports registered clients, token issuing foundations, and a
+minimal interactive authentication path through Spring Security form login.
 
 This is a foundation, not a complete product-grade authorization server
 deployment.
@@ -99,11 +99,31 @@ Authentication audit events record existing user resource identifiers and event
 types only. They must not include raw passwords, password hashes, MFA secrets,
 tokens, client secrets, or signing keys.
 
+## Minimal HTTP Login Flow
+
+Local platform users can authenticate through Spring Security's server-side
+`/login` form endpoint. A successful login creates an authenticated web session
+using the existing local authentication provider. This session is intended to
+support browser-based Authorization Server requests, including future
+Authorization Code Flow work.
+
+Login failure behavior is generic. Failed form login redirects to Spring
+Security's standard failure URL and does not reveal whether the username,
+password, account status, or password credential state caused the rejection.
+
+The login session does not weaken API authorization. `/api/health` remains
+public, while management APIs under `/api/**` and SCIM APIs under `/scim/v2/**`
+continue to require JWT authorities with `iam.read` or `iam.write` scopes.
+Authenticated local user sessions do not receive those API scopes.
+
 ## Current Security Boundaries
 
 - `/api/health` is public.
 - `/api/**` requires JWT scope authorization.
 - `/scim/v2/**` requires JWT scope authorization.
+- `/login` supports minimal server-side local user authentication.
+- Authorization Server browser requests can require interactive user
+  authentication through the login session.
 - Application services enforce tenant consistency for selected workflows.
 - Sensitive values such as MFA secrets are not returned in normal user
   responses.
@@ -113,6 +133,7 @@ tokens, client secrets, or signing keys.
 The project intentionally does not yet include:
 
 - Complete production login and account lifecycle flows.
+- MFA integration into login.
 - Enterprise-grade key rotation.
 - External secret management.
 - Full token lifecycle controls.

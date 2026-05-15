@@ -21,6 +21,7 @@ responsibilities:
 - Persistence.
 - Web APIs.
 - Authorization server configuration.
+- Local user login integration.
 - Audit logging.
 - MFA.
 - SCIM provisioning foundation.
@@ -73,6 +74,12 @@ and OpenAPI documentation.
 Spring Authorization Server provides the OAuth2 foundation. JWT and JWK support
 are present for token-based API authorization.
 
+Local platform users can authenticate through Spring Security's minimal
+server-side form login. Successful login creates an authenticated web session
+that can satisfy interactive user authentication for Authorization Server
+browser requests. Management and SCIM APIs remain protected by JWT scope rules
+and do not become accessible through the login session alone.
+
 ### Audit
 
 Audit logging records important IAM and administration events. The current
@@ -104,7 +111,8 @@ separate deployment, ownership, scaling, or operational boundaries.
 
 ## Current Limitations
 
-- User authentication and account lifecycle flows are still limited.
+- User authentication is limited to a minimal backend login foundation.
+- Account lifecycle flows are still limited.
 - Secret and key management are local-development focused.
 - SCIM support is foundational.
 - The CI/CD pipeline builds and tests but does not deploy.
@@ -112,6 +120,6 @@ separate deployment, ownership, scaling, or operational boundaries.
 
 ## Evolution Path
 
-The next architectural direction is a focused user authentication and login
-foundation. Later work may add stronger token lifecycle handling, external
-secret management, deployment practice, and operational documentation.
+The next architectural direction is persistent OAuth2 registered client
+modeling. Later work may add stronger token lifecycle handling, external secret
+management, deployment practice, and operational documentation.

@@ -9,8 +9,8 @@ application services, REST APIs, OAuth2/JWT concepts, scope-based API
 authorization, audit logging, MFA, SCIM-style provisioning foundations, OpenAPI
 documentation, and CI/CD practice.
 
-It is not production-ready, not a complete usable IAM product, and does not yet
-include user login flows or a frontend.
+It is not production-ready, not a complete usable IAM product, and currently
+includes only a minimal backend login foundation without a frontend.
 
 This roadmap is for continued development planning. It is not a release record.
 
@@ -62,6 +62,7 @@ This roadmap is for continued development planning. It is not a release record.
 - JWT support.
 - JWK support.
 - Scope-based API authorization using `iam.read` and `iam.write`.
+- Minimal server-side login flow for local platform users.
 
 ### Audit Logging
 
@@ -90,20 +91,21 @@ This roadmap is for continued development planning. It is not a release record.
 
 ## Next Development Direction
 
-### User Authentication And Login Foundation
+### OAuth2 Registered Client Persistence Foundation
 
-The next development direction is to add a focused foundation for user
-authentication and login behavior.
+The next development direction is to add persistent OAuth2 registered client
+modeling.
 
-The goal is to introduce login-related backend behavior without claiming that
-the project has become a complete IAM product.
+The goal is to move beyond the current local-development in-memory registered
+client while keeping secret handling, redirect URI validation, and grant type
+configuration explicit and testable.
 
 Candidate work:
 
-- Define login use case boundaries.
-- Decide how login integrates with Spring Authorization Server.
-- Add password handling foundations if needed.
-- Add account state concepts only if required by the login workflow.
+- Model registered clients persistently.
+- Store client secrets safely.
+- Add redirect URI and grant type configuration.
+- Add repository-backed Spring Authorization Server integration.
 - Add tests for security-sensitive behavior.
 - Update architecture and security documentation after implementation.
 

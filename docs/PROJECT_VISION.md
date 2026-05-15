@@ -10,8 +10,8 @@ project context, understand the current direction, and continue development
 without treating the project as a finished IAM product.
 
 The current project state is an IAM backend foundation prototype. It is not
-production-ready, not a complete usable IAM product, and does not yet include
-user login flows or a frontend.
+production-ready, not a complete usable IAM product, and includes only a
+minimal backend login foundation without a frontend.
 
 Current progress and future development planning are tracked in the
 [Roadmap](ROADMAP.md).

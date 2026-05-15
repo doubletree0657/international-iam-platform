@@ -15,13 +15,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -31,6 +33,10 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
@@ -47,14 +53,21 @@ public class AuthorizationServerConfiguration {
                 .securityMatcher(authorizationServerEndpointsMatcher)
                 .with(authorizationServerConfigurer, Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+                .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint("/login"),
+                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(authorizationServerEndpointsMatcher));
 
         return http.build();
     }
 
-    @Bean
+    @Bean    
     @Order(Ordered.LOWEST_PRECEDENCE)
     SecurityFilterChain applicationSecurityFilterChain(HttpSecurity http) throws Exception {
+        RequestMatcher apiEndpointsMatcher = new OrRequestMatcher(
+                AntPathRequestMatcher.antMatcher("/api/**"),
+                AntPathRequestMatcher.antMatcher("/scim/v2/**"));
+
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/health").permitAll()
@@ -64,8 +77,17 @@ public class AuthorizationServerConfiguration {
                         .requestMatchers(HttpMethod.POST, "/scim/v2/**").hasAuthority("SCOPE_iam.write")
                         .requestMatchers("/scim/v2/**").hasAuthority("SCOPE_iam.read")
                         .anyRequest().permitAll())
+                .formLogin(Customizer.withDefaults())
+                .logout(Customizer.withDefaults())
+                .exceptionHandling(exceptions -> exceptions
+                        .defaultAuthenticationEntryPointFor(
+                                new BearerTokenAuthenticationEntryPoint(),
+                                apiEndpointsMatcher)
+                        .defaultAccessDeniedHandlerFor(
+                                new BearerTokenAccessDeniedHandler(),
+                                apiEndpointsMatcher))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .csrf(AbstractHttpConfigurer::disable);
+                .csrf(csrf -> csrf.ignoringRequestMatchers(apiEndpointsMatcher));
 
         return http.build();
     }
@@ -77,6 +99,8 @@ public class AuthorizationServerConfiguration {
                 .clientSecret(passwordEncoder.encode("secret"))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/international-iam-dev")
                 .scope("iam.read")
                 .scope("iam.write")
                 .tokenSettings(TokenSettings.builder()

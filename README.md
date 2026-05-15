@@ -9,7 +9,7 @@ architecture discussion, continued development planning, and future AI-assisted
 context recovery.
 
 The project is not production-ready. It is not a complete usable IAM product
-yet, and it does not currently include user login flows or a frontend.
+yet, and it does not currently include a frontend.
 
 ## Current Status
 
@@ -24,6 +24,7 @@ The current implementation includes:
 - REST API layer with DTOs, validation, centralized error handling, and
   OpenAPI documentation.
 - OAuth2 Authorization Server foundation.
+- Minimal server-side login flow for local platform users.
 - JWT and JWK support.
 - Scope-based API authorization using `iam.read` and `iam.write`.
 - Audit logging for important IAM and administration events.
@@ -104,6 +105,12 @@ under `/scim/v2/**` require OAuth2 JWT scopes:
 
 - Read operations require `iam.read`.
 - Write operations require `iam.write`.
+
+Local platform users with active password credentials can authenticate through
+the minimal server-side `/login` form handled by Spring Security. This login
+creates a normal authenticated session for browser-based Authorization Server
+readiness. It does not grant access to management or SCIM APIs, which remain
+protected by JWT scope checks.
 
 ## Roadmap
 
