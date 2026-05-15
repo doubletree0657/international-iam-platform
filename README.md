@@ -1,37 +1,49 @@
 # international-iam-platform
 
-`international-iam-platform` is an IAM backend foundation prototype built with
-Java 21 and Spring Boot.
+`international-iam-platform` is a backend-focused identity and access
+management platform project built with Java 21, Spring Boot, Spring Security,
+Spring Authorization Server, PostgreSQL, Docker, and CI/CD practice.
 
-The project is intended to explore and document the backend foundations of an
-identity and access management system. It is useful for code review,
-architecture discussion, continued development planning, and future AI-assisted
-context recovery.
+The project exists as a portfolio-grade engineering workspace for modern Java
+backend development, identity security, OAuth2, MFA, SCIM-style provisioning,
+containerized local development, continuous delivery practice, and technical
+interview preparation for international backend roles.
 
-The project is not production-ready. It is not a complete usable IAM product
-yet, and it does not currently include a frontend.
+It is under active development and is not production-ready. The current code is
+useful for demonstrating implementation direction, design judgment, testing
+practice, and incremental delivery, but it should not be treated as a complete
+IAM product or deployed for real users.
 
-## Current Status
+## Technical Focus
 
-The current implementation includes:
+The project targets these areas:
 
-- Core IAM domain model for tenants, users, clients, roles, permissions,
-  groups, and audit logs.
-- Flyway-managed PostgreSQL database migrations.
-- Spring Data JPA repositories and PostgreSQL Testcontainers persistence tests.
-- Application service layer for use-case orchestration and tenant boundary
-  validation.
-- REST API layer with DTOs, validation, centralized error handling, and
-  OpenAPI documentation.
-- OAuth2 Authorization Server foundation.
-- Minimal server-side login flow for local platform users.
-- JWT and JWK support.
-- Scope-based API authorization using `iam.read` and `iam.write`.
-- Audit logging for important IAM and administration events.
-- TOTP MFA enrollment and verification.
-- Encryption foundation for stored MFA secrets.
-- SCIM-style user and group provisioning foundation.
-- GitLab CI/CD pipeline for test, package, and Docker image build stages.
+- Java 21 and Spring Boot backend architecture.
+- Identity domain modeling for tenants, users, clients, roles, permissions,
+  groups, and audit events.
+- OAuth2 and authorization server behavior with Spring Authorization Server.
+- Spring Security integration, JWTs, JWKs, and scope-based API protection.
+- MFA workflows and secure handling of authentication secrets.
+- SCIM-style user and group provisioning APIs.
+- PostgreSQL persistence with Flyway migrations and JPA.
+- Docker-based local services and CI/CD workflows.
+- Testcontainers-backed integration testing.
+- Clear documentation for code review and interview discussion.
+
+## Current State
+
+The codebase currently includes a Spring Boot backend with Flyway-managed
+PostgreSQL schema migrations, JPA repositories, service-layer orchestration,
+REST controllers, DTO validation, centralized error handling, OpenAPI output,
+JWT/JWK support, scope-protected APIs, audit logging, TOTP enrollment and
+verification, encrypted MFA secret storage, SCIM-style user and group APIs, a
+Dockerfile, local PostgreSQL/Redis Compose services, and a GitLab CI pipeline.
+
+Login support currently uses Spring Security's default server-side form login as
+an early integration step for browser-based authorization work. It is not a
+product-grade login experience, does not include a frontend, and does not by
+itself grant access to management or SCIM APIs. Those APIs remain protected by
+OAuth2 JWT scope checks.
 
 ## Tech Stack
 
@@ -48,6 +60,15 @@ The current implementation includes:
 - OpenAPI / Swagger UI
 - GitLab CI/CD
 
+## Running Tests
+
+Tests use Maven and Testcontainers. Docker or a compatible container runtime
+must be available.
+
+```bash
+./mvnw test
+```
+
 ## Local Development
 
 Required tools:
@@ -60,12 +81,6 @@ Start local dependencies:
 
 ```bash
 docker compose up -d
-```
-
-Run tests:
-
-```bash
-./mvnw test
 ```
 
 Run the application:
@@ -106,20 +121,8 @@ under `/scim/v2/**` require OAuth2 JWT scopes:
 - Read operations require `iam.read`.
 - Write operations require `iam.write`.
 
-Local platform users with active password credentials can authenticate through
-the minimal server-side `/login` form handled by Spring Security. This login
-creates a normal authenticated session for browser-based Authorization Server
-readiness. It does not grant access to management or SCIM APIs, which remain
-protected by JWT scope checks.
-
 ## Roadmap
 
-Current progress, the next development direction, and future planned work are
-tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
-
-## Documentation
-
-- [Project Vision](docs/PROJECT_VISION.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security Design](docs/SECURITY_DESIGN.md)
+Planning is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). The roadmap is the
+single planning document for current direction, future product tracks, and
+documentation policy.

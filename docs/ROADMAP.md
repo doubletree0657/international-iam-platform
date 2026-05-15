@@ -1,128 +1,177 @@
 # Roadmap
 
+This roadmap is the planning source for `international-iam-platform`. It is
+organized around complete, demonstrable product slices rather than tiny
+framework configuration tasks.
+
+The project is under active development and is not production-ready. Planning
+should keep the long-term target in view: a portfolio-grade IAM platform for
+modern Java backend engineering, identity security, OAuth2, MFA, SCIM-style
+provisioning, Docker, CI/CD, and international job interview preparation.
+
 ## Current State
 
-The project is currently an IAM backend foundation prototype.
+The codebase currently includes:
 
-It has a working backend foundation for IAM domain modeling, persistence,
-application services, REST APIs, OAuth2/JWT concepts, scope-based API
-authorization, audit logging, MFA, SCIM-style provisioning foundations, OpenAPI
-documentation, and CI/CD practice.
+- Java 21 and Spring Boot backend structure.
+- IAM entities for tenants, users, clients, roles, permissions, groups, group
+  membership, and audit events.
+- Flyway-managed PostgreSQL schema migrations.
+- JPA repositories and Testcontainers-backed persistence tests.
+- Service-layer workflows and selected tenant boundary checks.
+- REST APIs with DTO validation, centralized error handling, and OpenAPI output.
+- Spring Authorization Server integration, JWT/JWK support, and scope-protected
+  APIs using `iam.read` and `iam.write`.
+- Spring Security default form login for early browser-based authorization
+  integration.
+- TOTP enrollment and verification, including encrypted MFA secret storage.
+- SCIM-style user and group provisioning APIs.
+- Dockerfile, local PostgreSQL/Redis Compose services, and GitLab CI stages for
+  test, package, and Docker image build.
 
-It is not production-ready, not a complete usable IAM product, and currently
-includes only a minimal backend login foundation without a frontend.
+Current login support is an integration step, not a product-grade authentication
+experience. It should be expanded into a designed authentication flow before the
+project presents it as a user-facing IAM capability.
 
-This roadmap is for continued development planning. It is not a release record.
+## Project Realignment
 
-## Implemented Foundations
+Goal: make the repository read as a serious IAM platform project with clear
+scope, honest status, and product-oriented development slices.
 
-### Project Baseline
+Planned work:
 
-- Spring Boot project baseline.
-- Maven Wrapper.
-- Docker Compose for PostgreSQL and Redis.
-- Health check endpoint.
-- Local development workflow.
+- Keep documentation concise and current.
+- Use the roadmap as the planning hub.
+- Prefer end-to-end deliverables that can be demonstrated locally or in CI.
+- Avoid treating small framework wiring as completed product functionality.
+- Align commit and issue planning around visible IAM outcomes.
 
-### Core IAM Domain Model
+## Identity Domain Model Upgrade
 
-- Tenant.
-- User.
-- Client.
-- Role.
-- Permission.
-- Group.
-- Group membership.
-- Audit log.
+Goal: evolve the existing IAM model into a stronger product domain that can
+support real authentication, client management, provisioning, audit trails, and
+tenant-aware administration.
 
-### Persistence
+Candidate slices:
 
-- Flyway-managed database migrations.
-- Spring Data JPA repositories.
-- PostgreSQL persistence tests with Testcontainers.
+- Account lifecycle states and transitions.
+- Credential ownership, password metadata, and policy hooks.
+- Tenant-aware user, group, role, permission, and client relationships.
+- Clear distinction between platform administration concepts and OAuth2 client
+  registration concepts.
+- Tests for tenant boundaries and security-sensitive invariants.
 
-### Application Services
+## End-to-End OAuth2 Login Flow
 
-- Use-case-oriented service layer.
-- Tenant boundary validation for selected workflows.
-- Service-level orchestration for core IAM operations.
+Goal: provide a demonstrable OAuth2 authorization code flow that connects local
+users, registered clients, authorization requests, login, redirects, and token
+issuance.
 
-### REST API Layer
+Candidate slices:
 
-- REST controllers for core IAM management workflows.
-- DTO-based request and response models.
-- Validation.
-- Centralized error handling.
-- OpenAPI documentation.
+- Persistent registered clients for authorization code scenarios.
+- Redirect URI and grant type validation.
+- PKCE support for public clients.
+- Browser-based authorization request walkthrough.
+- Token issuance verification and API access using issued tokens.
+- Integration tests that prove the full flow.
 
-### OAuth2, JWT, And API Authorization
+## Productized Authentication
 
-- Spring Authorization Server foundation.
-- Registered client support.
-- JWT support.
-- JWK support.
-- Scope-based API authorization using `iam.read` and `iam.write`.
-- Minimal server-side login flow for local platform users.
+Goal: replace the current default form login dependency with a deliberate
+authentication experience and backend behavior suitable for an IAM product
+portfolio project.
 
-### Audit Logging
+Candidate slices:
 
-- Audit log model and persistence.
-- Audit events for important IAM and administration operations.
-- Foundation for future traceability and operational review.
+- Designed login route and response behavior.
+- Account status handling for disabled, locked, expired, and incomplete users.
+- Password policy and safe password change flows.
+- Generic failure behavior that avoids account enumeration.
+- Session handling and logout behavior.
+- Clear boundaries between browser login sessions and OAuth2-protected APIs.
 
-### MFA And Secret Protection
+## OAuth2 Client Management
 
-- TOTP MFA enrollment and verification.
-- TOTP verification hardening.
-- Protection against exposing MFA secrets in normal responses.
-- Encryption foundation for stored MFA secrets.
+Goal: make OAuth2 client registration and management a first-class product area
+rather than local development configuration.
 
-### SCIM Foundation
+Candidate slices:
 
-- SCIM-style user provisioning foundation.
-- SCIM-style group provisioning foundation.
-- Tenant consistency checks for group membership behavior.
+- Persistent client registration model.
+- Client secret hashing, rotation, and display rules.
+- Redirect URI, scope, grant type, and token settings management.
+- Public versus confidential client behavior.
+- Administrative APIs with validation and audit events.
+- Repository-backed Spring Authorization Server integration.
 
-### Documentation And CI/CD
+## MFA and Strong Authentication
 
-- OpenAPI / Swagger UI documentation.
-- GitLab CI pipeline for test, package, and Docker image build stages.
-- Project vision, roadmap, architecture, and security design documentation.
+Goal: develop MFA as a coherent authentication capability with enrollment,
+challenge, verification, recovery, and audit behavior.
 
-## Next Development Direction
+Candidate slices:
 
-### OAuth2 Registered Client Persistence Foundation
+- TOTP enrollment lifecycle.
+- MFA challenge during login.
+- Recovery code generation and verification.
+- Step-up authentication for sensitive actions.
+- Secret encryption, rotation strategy, and exposure tests.
+- Audit events for enrollment, verification, recovery, and failure cases.
 
-The next development direction is to add persistent OAuth2 registered client
-modeling.
+## SCIM and Provisioning
 
-The goal is to move beyond the current local-development in-memory registered
-client while keeping secret handling, redirect URI validation, and grant type
-configuration explicit and testable.
+Goal: grow the SCIM-style APIs into a practical provisioning surface for users,
+groups, membership, lifecycle changes, and tenant-specific identity data.
 
-Candidate work:
+Candidate slices:
 
-- Model registered clients persistently.
-- Store client secrets safely.
-- Add redirect URI and grant type configuration.
-- Add repository-backed Spring Authorization Server integration.
-- Add tests for security-sensitive behavior.
-- Update architecture and security documentation after implementation.
+- User create, update, deactivate, and lookup behavior.
+- Group create, update, lookup, and membership behavior.
+- Consistent identifiers, filtering, pagination, and error responses.
+- Tenant boundary enforcement.
+- Provisioning audit events.
+- Compatibility notes for SCIM-inspired versus fully SCIM-compliant behavior.
 
-## Future Planned Work
+## Audit Logging and Security Events
 
-Future development may include:
+Goal: turn audit logging into a dependable security event trail for identity,
+administration, OAuth2, MFA, and provisioning workflows.
 
-- Account lifecycle flows.
-- Password policy design.
-- Stronger client secret handling.
-- Token lifecycle improvements.
-- More detailed authorization policy.
-- Expanded SCIM compatibility.
-- External secret management and key rotation design.
-- Docker image publishing to GitLab Container Registry.
-- Deployment pipeline practice.
-- CI/CD secret management.
-- Observability and operational runbook-style documentation.
+Candidate slices:
 
-These items are planning candidates and may change as the project evolves.
+- Event taxonomy for authentication, authorization, administration, MFA, and
+  provisioning.
+- Request metadata capture.
+- Tenant-aware audit queries.
+- Protection against logging secrets or sensitive credential material.
+- Tests for required events in critical workflows.
+- Operational examples for review and incident analysis.
+
+## Docker, CI/CD, and Deployment
+
+Goal: make the project easy to run locally, verify in CI, package as a
+container image, and later deploy as a realistic backend service.
+
+Candidate slices:
+
+- Reliable local Compose workflow for PostgreSQL and Redis.
+- Reproducible Maven test and package stages.
+- Docker image build and tagging strategy.
+- Container registry publishing.
+- Environment-specific configuration.
+- CI secret handling.
+- Deployment practice, smoke checks, and rollback notes.
+
+## Documentation Policy
+
+- `README.md` should explain the project, current state, local workflow, and
+  link to this roadmap.
+- `docs/ROADMAP.md` is the single source of truth for planning until the
+  product behavior is larger and more stable.
+- Architecture and security design documents should be recreated later, after
+  the core domain model and end-to-end OAuth2 login flow become more
+  substantial.
+- Documentation should describe implemented behavior honestly.
+- Documentation should not make small framework configuration look like a
+  completed IAM product feature.
