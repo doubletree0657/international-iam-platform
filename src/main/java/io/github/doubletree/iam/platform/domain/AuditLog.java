@@ -2,6 +2,8 @@ package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,8 +22,11 @@ public class AuditLog {
 
     private UUID tenantId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String actor;
+    private AuditActorType actorType = AuditActorType.API_CLIENT;
+
+    private UUID actorId;
 
     @Column(nullable = false)
     private String action;
@@ -32,19 +37,36 @@ public class AuditLog {
     @Column(nullable = false)
     private UUID resourceId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuditResult result = AuditResult.SUCCESS;
+
+    private String ipAddress;
+
+    private String userAgent;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     protected AuditLog() {
     }
 
-    public static AuditLog record(UUID tenantId, String actor, String action, String resourceType, UUID resourceId) {
+    public static AuditLog record(
+            UUID tenantId,
+            AuditActorType actorType,
+            UUID actorId,
+            String action,
+            String resourceType,
+            UUID resourceId,
+            AuditResult result) {
         AuditLog auditLog = new AuditLog();
         auditLog.setTenantId(tenantId);
-        auditLog.setActor(actor);
+        auditLog.setActorType(actorType);
+        auditLog.setActorId(actorId);
         auditLog.setAction(action);
         auditLog.setResourceType(resourceType);
         auditLog.setResourceId(resourceId);
+        auditLog.setResult(result);
         return auditLog;
     }
 
@@ -65,11 +87,27 @@ public class AuditLog {
     }
 
     public String getActor() {
-        return actor;
+        return actorType.name().toLowerCase().replace('_', '-');
     }
 
     public void setActor(String actor) {
-        this.actor = actor;
+        this.actorType = AuditActorType.API_CLIENT;
+    }
+
+    public AuditActorType getActorType() {
+        return actorType;
+    }
+
+    public void setActorType(AuditActorType actorType) {
+        this.actorType = actorType;
+    }
+
+    public UUID getActorId() {
+        return actorId;
+    }
+
+    public void setActorId(UUID actorId) {
+        this.actorId = actorId;
     }
 
     public String getAction() {
@@ -94,6 +132,30 @@ public class AuditLog {
 
     public void setResourceId(UUID resourceId) {
         this.resourceId = resourceId;
+    }
+
+    public AuditResult getResult() {
+        return result;
+    }
+
+    public void setResult(AuditResult result) {
+        this.result = result;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
     }
 
     public Instant getCreatedAt() {

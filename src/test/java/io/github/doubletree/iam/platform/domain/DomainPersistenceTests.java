@@ -3,6 +3,10 @@ package io.github.doubletree.iam.platform.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.doubletree.iam.platform.repository.ClientRepository;
+import io.github.doubletree.iam.platform.repository.GroupMembershipRepository;
+import io.github.doubletree.iam.platform.repository.GroupRepository;
+import io.github.doubletree.iam.platform.repository.UserAttributeRepository;
+import io.github.doubletree.iam.platform.repository.UserProfileRepository;
 import io.github.doubletree.iam.platform.repository.PermissionRepository;
 import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
@@ -43,6 +47,18 @@ class DomainPersistenceTests {
     private ClientRepository clientRepository;
 
     @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
+    private GroupMembershipRepository groupMembershipRepository;
+
+    @Autowired
+    private UserProfileRepository userProfileRepository;
+
+    @Autowired
+    private UserAttributeRepository userAttributeRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @DynamicPropertySource
@@ -62,7 +78,9 @@ class DomainPersistenceTests {
         Tenant loadedTenant = tenantRepository.findById(tenant.getId()).orElseThrow();
 
         assertThat(loadedTenant.getName()).isEqualTo("Acme");
+        assertThat(loadedTenant.getSlug()).isEqualTo("acme");
         assertThat(loadedTenant.getCreatedAt()).isNotNull();
+        assertThat(loadedTenant.getUpdatedAt()).isNotNull();
     }
 
     @Test
@@ -118,6 +136,35 @@ class DomainPersistenceTests {
     }
 
     @Test
+    void userProfileAndAttributesCanBeSavedAndLoadedSeparatelyFromCoreIdentity() {
+        Tenant tenant = tenantRepository.save(tenant("Profile Tenant"));
+        User user = userRepository.save(user(tenant, "profile-user", "Profile User"));
+
+        UserProfile profile = UserProfile.create(user);
+        profile.setGivenName("Profile");
+        profile.setFamilyName("User");
+        profile.setLocale("en-US");
+        profile.setDepartment("Engineering");
+        userProfileRepository.save(profile);
+
+        userAttributeRepository.save(UserAttribute.create(
+                user, "costCenter", "iam-platform", UserAttributeValueType.STRING));
+
+        flushAndClear();
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        UserProfile loadedProfile = userProfileRepository.findAll().getFirst();
+        UserAttribute loadedAttribute = userAttributeRepository.findAll().getFirst();
+
+        assertThat(loadedUser.getEmail()).isNull();
+        assertThat(loadedProfile.getUser().getId()).isEqualTo(user.getId());
+        assertThat(loadedProfile.getDepartment()).isEqualTo("Engineering");
+        assertThat(loadedAttribute.getUser().getId()).isEqualTo(user.getId());
+        assertThat(loadedAttribute.getName()).isEqualTo("costCenter");
+        assertThat(loadedAttribute.getValueType()).isEqualTo(UserAttributeValueType.STRING);
+    }
+
+    @Test
     void roleBelongsToTenant() {
         Tenant tenant = tenantRepository.save(tenant("Role Tenant"));
         Role role = roleRepository.save(role(tenant, "admin"));
@@ -148,9 +195,27 @@ class DomainPersistenceTests {
     }
 
     @Test
+    void groupMembershipConnectsUsersAndGroupsExplicitly() {
+        Tenant tenant = tenantRepository.save(tenant("Membership Tenant"));
+        User user = userRepository.save(user(tenant, "member", "Member User"));
+        Group group = groupRepository.save(group(tenant, "engineering"));
+        group.addUser(user);
+        groupRepository.save(group);
+
+        flushAndClear();
+
+        Group loadedGroup = groupRepository.findById(group.getId()).orElseThrow();
+
+        assertThat(groupMembershipRepository.findAll()).hasSize(1);
+        assertThat(loadedGroup.getUsers())
+                .extracting(User::getUsername)
+                .containsExactly("member");
+    }
+
+    @Test
     void roleCanHavePermissions() {
         Tenant tenant = tenantRepository.save(tenant("Role Permission Tenant"));
-        Permission permission = permissionRepository.save(permission("clients:read"));
+        Permission permission = permissionRepository.save(permission(tenant, "clients:read"));
         Role role = role(tenant, "auditor");
         role.getPermissions().add(permission);
         Role savedRole = roleRepository.save(role);
@@ -175,6 +240,13 @@ class DomainPersistenceTests {
 
         assertThat(loadedClient.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedClient.getClientId()).isEqualTo("portal");
+        assertThat(loadedClient.getClientType()).isEqualTo(ClientType.CONFIDENTIAL);
+        assertThat(loadedClient.getStatus()).isEqualTo(ClientStatus.ACTIVE);
+        assertThat(loadedClient.isRequirePkce()).isTrue();
+        assertThat(loadedClient.isRequireConsent()).isTrue();
+        assertThat(loadedClient.getGrantTypes()).containsExactly("authorization_code");
+        assertThat(loadedClient.getScopes()).containsExactly("iam.read");
+        assertThat(loadedClient.getAuthenticationMethods()).containsExactly("client_secret_basic");
     }
 
     private void flushAndClear() {
@@ -203,17 +275,22 @@ class DomainPersistenceTests {
         return role;
     }
 
-    private Permission permission(String name) {
+    private Permission permission(Tenant tenant, String name) {
         Permission permission = new Permission();
+        permission.setTenant(tenant);
         permission.setName(name);
         return permission;
     }
 
     private Client client(Tenant tenant, String clientId, String name) {
-        Client client = new Client();
-        client.setTenant(tenant);
-        client.setClientId(clientId);
-        client.setName(name);
-        return client;
+        return Client.create(tenant, clientId, name);
+    }
+
+    private Group group(Tenant tenant, String name) {
+        Group group = new Group();
+        group.setTenant(tenant);
+        group.setName(name);
+        group.setDisplayName(name);
+        return group;
     }
 }

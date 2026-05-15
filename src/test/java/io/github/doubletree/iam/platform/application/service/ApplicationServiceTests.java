@@ -386,7 +386,9 @@ class ApplicationServiceTests {
 
     @Test
     void createsPermission() {
-        Permission permission = permissionApplicationService.createPermission("clients:read");
+        Tenant tenant = tenantApplicationService.createTenant("Permission Tenant");
+
+        Permission permission = permissionApplicationService.createPermission(tenant.getId(), "clients:read");
 
         Permission loadedPermission = permissionRepository.findById(permission.getId()).orElseThrow();
 
@@ -444,7 +446,7 @@ class ApplicationServiceTests {
     void assignsPermissionToRole() {
         Tenant tenant = tenantApplicationService.createTenant("Permission Assignment Tenant");
         Role role = roleApplicationService.createRole(tenant.getId(), "auditor");
-        Permission permission = permissionApplicationService.createPermission("users:read");
+        Permission permission = permissionApplicationService.createPermission(tenant.getId(), "users:read");
 
         roleApplicationService.assignPermissionToRole(role.getId(), permission.getId());
 

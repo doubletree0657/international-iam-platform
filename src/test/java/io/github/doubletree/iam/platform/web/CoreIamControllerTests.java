@@ -146,17 +146,21 @@ class CoreIamControllerTests {
 
     @Test
     void createsPermission() throws Exception {
-        when(permissionApplicationService.createPermission(eq("clients:read")))
+        when(permissionApplicationService.createPermission(eq(TENANT_ID), eq("clients:read")))
                 .thenReturn(permission("clients:read"));
 
         mockMvc.perform(post("/api/permissions")
                         .with(writeScopeJwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"clients:read"}
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "name":"clients:read"
+                                }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(PERMISSION_ID.toString()))
+                .andExpect(jsonPath("$.tenantId").value(TENANT_ID.toString()))
                 .andExpect(jsonPath("$.name").value("clients:read"));
     }
 
@@ -320,7 +324,7 @@ class CoreIamControllerTests {
     @Test
     void createsScimGroup() throws Exception {
         Group group = group("engineering");
-        group.getUsers().add(user("scim-member", "SCIM Member"));
+        group.addUser(user("scim-member", "SCIM Member"));
         when(groupApplicationService.createGroup(eq(TENANT_ID), eq("engineering")))
                 .thenReturn(group("engineering"));
         when(groupApplicationService.addUserToGroup(eq(GROUP_ID), eq(USER_ID)))
@@ -346,7 +350,7 @@ class CoreIamControllerTests {
     @Test
     void readsScimGroup() throws Exception {
         Group group = group("readers");
-        group.getUsers().add(user("reader", "Reader User"));
+        group.addUser(user("reader", "Reader User"));
         when(groupApplicationService.findGroup(eq(GROUP_ID)))
                 .thenReturn(group);
 
@@ -436,7 +440,7 @@ class CoreIamControllerTests {
     }
 
     private Permission permission(String name) {
-        Permission permission = Permission.create(name);
+        Permission permission = Permission.create(tenant("Test Tenant"), name);
         permission.setId(PERMISSION_ID);
         return permission;
     }

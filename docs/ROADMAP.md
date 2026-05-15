@@ -14,9 +14,11 @@ provisioning, Docker, CI/CD, and international job interview preparation.
 The codebase currently includes:
 
 - Java 21 and Spring Boot backend structure.
-- IAM entities for tenants, users, clients, roles, permissions, groups, group
-  membership, and audit events.
-- Flyway-managed PostgreSQL schema migrations.
+- IAM entities for tenants, users, user profiles, password credentials, custom
+  attributes, clients, roles, permissions, groups, group membership, and audit
+  events.
+- A pre-release Flyway schema reset with a single baseline migration before the
+  first stable release.
 - JPA repositories and Testcontainers-backed persistence tests.
 - Service-layer workflows and selected tenant boundary checks.
 - REST APIs with DTO validation, centralized error handling, and OpenAPI output.
@@ -48,11 +50,24 @@ Planned work:
 
 ## Identity Domain Model Upgrade
 
+Status: active track.
+
 Goal: evolve the existing IAM model into a stronger product domain that can
 support real authentication, client management, provisioning, audit trails, and
 tenant-aware administration.
 
-Candidate slices:
+Completed in the current pre-release reset:
+
+- Replaced the old Flyway migration chain with one baseline schema.
+- Moved password credential persistence out of the core user record.
+- Added user profile and custom user attribute concepts.
+- Made group membership explicit.
+- Kept roles and permissions tenant-scoped.
+- Expanded OAuth2 client registration fields for future persistent
+  `RegisteredClient` integration.
+- Expanded audit records into security event-style metadata.
+
+Remaining candidate slices:
 
 - Account lifecycle states and transitions.
 - Credential ownership, password metadata, and policy hooks.

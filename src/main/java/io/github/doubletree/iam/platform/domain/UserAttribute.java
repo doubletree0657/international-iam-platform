@@ -2,39 +2,41 @@ package io.github.doubletree.iam.platform.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.UUID;
 
-/**
- * Role groups permissions so users can receive access through named assignments.
- */
 @Entity
-@Table(name = "roles")
-public class Role {
+@Table(name = "user_attributes")
+public class UserAttribute {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false)
     private UUID id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+    @Column(name = "attribute_value", nullable = false)
+    private String value;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserAttributeValueType valueType = UserAttributeValueType.STRING;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -42,21 +44,16 @@ public class Role {
     @Column(nullable = false)
     private Instant updatedAt = Instant.now();
 
-    @ManyToMany
-    @JoinTable(
-            name = "role_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id"))
-    private Set<Permission> permissions = new LinkedHashSet<>();
-
-    protected Role() {
+    protected UserAttribute() {
     }
 
-    public static Role create(Tenant tenant, String name) {
-        Role role = new Role();
-        role.setTenant(tenant);
-        role.setName(name);
-        return role;
+    public static UserAttribute create(User user, String name, String value, UserAttributeValueType valueType) {
+        UserAttribute attribute = new UserAttribute();
+        attribute.setUser(user);
+        attribute.setName(name);
+        attribute.setValue(value);
+        attribute.setValueType(valueType);
+        return attribute;
     }
 
     @PreUpdate
@@ -72,6 +69,14 @@ public class Role {
         this.id = id;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public String getName() {
         return name;
     }
@@ -80,12 +85,20 @@ public class Role {
         this.name = name;
     }
 
-    public Tenant getTenant() {
-        return tenant;
+    public String getValue() {
+        return value;
     }
 
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public UserAttributeValueType getValueType() {
+        return valueType;
+    }
+
+    public void setValueType(UserAttributeValueType valueType) {
+        this.valueType = valueType;
     }
 
     public Instant getCreatedAt() {
@@ -102,13 +115,5 @@ public class Role {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Set<Permission> getPermissions() {
-        return permissions;
-    }
-
-    public void setPermissions(Set<Permission> permissions) {
-        this.permissions = permissions;
     }
 }

@@ -1,6 +1,7 @@
 package io.github.doubletree.iam.platform.application.service;
 
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
+import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
@@ -46,6 +47,10 @@ public class RoleApplicationService {
                 .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleId));
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new EntityNotFoundException("Permission not found: " + permissionId));
+
+        if (!role.getTenant().getId().equals(permission.getTenant().getId())) {
+            throw new TenantBoundaryViolationException("Role and permission must belong to the same tenant");
+        }
 
         role.getPermissions().add(permission);
         Role savedRole = roleRepository.save(role);

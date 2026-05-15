@@ -57,7 +57,7 @@ public class GroupApplicationService {
             throw new TenantBoundaryViolationException("User and group must belong to the same tenant");
         }
 
-        group.getUsers().add(user);
+        group.addUser(user);
         Group savedGroup = groupRepository.save(group);
         auditApplicationService.recordEvent(
                 savedGroup.getTenant().getId(), "USER_ADDED_TO_GROUP", "GROUP", savedGroup.getId());
@@ -74,7 +74,7 @@ public class GroupApplicationService {
             throw new TenantBoundaryViolationException("User and group must belong to the same tenant");
         }
 
-        boolean removed = group.getUsers().remove(user);
+        boolean removed = group.removeUser(user);
         Group savedGroup = groupRepository.save(group);
         if (removed) {
             auditApplicationService.recordEvent(

@@ -33,11 +33,18 @@ The project targets these areas:
 ## Current State
 
 The codebase currently includes a Spring Boot backend with Flyway-managed
-PostgreSQL schema migrations, JPA repositories, service-layer orchestration,
-REST controllers, DTO validation, centralized error handling, OpenAPI output,
-JWT/JWK support, scope-protected APIs, audit logging, TOTP enrollment and
-verification, encrypted MFA secret storage, SCIM-style user and group APIs, a
-Dockerfile, local PostgreSQL/Redis Compose services, and a GitLab CI pipeline.
+PostgreSQL schema migrations, a stronger IAM domain model, JPA repositories,
+service-layer orchestration, REST controllers, DTO validation, centralized error
+handling, OpenAPI output, JWT/JWK support, scope-protected APIs, audit logging,
+TOTP enrollment and verification, encrypted MFA secret storage, SCIM-style user
+and group APIs, a Dockerfile, local PostgreSQL/Redis Compose services, and a
+GitLab CI pipeline.
+
+The project has performed a pre-release Flyway schema reset toward a stronger
+identity model. The current baseline includes tenant status, richer user
+identity fields, separate user profiles, password credentials, custom
+attributes, explicit group memberships, tenant-scoped RBAC, OAuth2 client
+registration concepts, and security event metadata.
 
 Login support currently uses Spring Security's default server-side form login as
 an early integration step for browser-based authorization work. It is not a
@@ -99,6 +106,12 @@ Stop local dependencies:
 
 ```bash
 docker compose down
+```
+
+Reset local database volumes after the pre-release schema reset:
+
+```bash
+./scripts/reset-local-db.sh
 ```
 
 Local services:

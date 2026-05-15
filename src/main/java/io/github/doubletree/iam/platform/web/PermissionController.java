@@ -31,7 +31,7 @@ public class PermissionController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create permission", description = "Requires iam.write scope.")
     public PermissionResponse createPermission(@Valid @RequestBody CreatePermissionRequest request) {
-        Permission permission = permissionApplicationService.createPermission(request.name());
+        Permission permission = permissionApplicationService.createPermission(request.tenantId(), request.name());
         return PermissionResponse.from(permission);
     }
 }
