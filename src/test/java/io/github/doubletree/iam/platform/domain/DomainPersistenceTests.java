@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.github.doubletree.iam.platform.repository.ClientRepository;
 import io.github.doubletree.iam.platform.repository.GroupMembershipRepository;
 import io.github.doubletree.iam.platform.repository.GroupRepository;
+import io.github.doubletree.iam.platform.repository.PasswordCredentialRepository;
+import io.github.doubletree.iam.platform.repository.TotpCredentialRepository;
 import io.github.doubletree.iam.platform.repository.UserAttributeRepository;
 import io.github.doubletree.iam.platform.repository.UserProfileRepository;
 import io.github.doubletree.iam.platform.repository.PermissionRepository;
@@ -36,6 +38,12 @@ class DomainPersistenceTests {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordCredentialRepository passwordCredentialRepository;
+
+    @Autowired
+    private TotpCredentialRepository totpCredentialRepository;
 
     @Autowired
     private RoleRepository roleRepository;
@@ -105,10 +113,7 @@ class DomainPersistenceTests {
 
         User loadedUser = userRepository.findById(user.getId()).orElseThrow();
 
-        assertThat(loadedUser.getPasswordHash()).isNull();
-        assertThat(loadedUser.getPasswordUpdatedAt()).isNull();
-        assertThat(loadedUser.isPasswordResetRequired()).isTrue();
-        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(1);
+        assertThat(loadedUser.getPasswordCredential()).isNull();
         assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
     }
 
@@ -117,22 +122,44 @@ class DomainPersistenceTests {
         Tenant tenant = tenantRepository.save(tenant("Credential Tenant"));
         Instant passwordUpdatedAt = Instant.parse("2026-01-01T00:00:00Z");
         User user = user(tenant, "credential-user", "Credential User");
-        user.setPasswordHash("$2a$10$storedPasswordHashOnly");
-        user.setPasswordUpdatedAt(passwordUpdatedAt);
-        user.setPasswordResetRequired(false);
-        user.setCredentialsVersion(2);
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash("$2a$10$storedPasswordHashOnly");
+        credential.setPasswordUpdatedAt(passwordUpdatedAt);
+        credential.setPasswordResetRequired(false);
+        credential.setCredentialsVersion(2);
         user.setAccountStatus(AccountStatus.LOCKED);
         User savedUser = userRepository.save(user);
 
         flushAndClear();
 
         User loadedUser = userRepository.findById(savedUser.getId()).orElseThrow();
+        PasswordCredential loadedCredential = passwordCredentialRepository.findByUserId(savedUser.getId()).orElseThrow();
 
-        assertThat(loadedUser.getPasswordHash()).isEqualTo("$2a$10$storedPasswordHashOnly");
-        assertThat(loadedUser.getPasswordUpdatedAt()).isEqualTo(passwordUpdatedAt);
-        assertThat(loadedUser.isPasswordResetRequired()).isFalse();
-        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(2);
+        assertThat(loadedCredential.getPasswordHash()).isEqualTo("$2a$10$storedPasswordHashOnly");
+        assertThat(loadedCredential.getPasswordUpdatedAt()).isEqualTo(passwordUpdatedAt);
+        assertThat(loadedCredential.isPasswordResetRequired()).isFalse();
+        assertThat(loadedCredential.getCredentialsVersion()).isEqualTo(2);
         assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.LOCKED);
+    }
+
+    @Test
+    void totpCredentialCanBeSavedAndLoadedSeparatelyFromUser() {
+        Tenant tenant = tenantRepository.save(tenant("TOTP Credential Tenant"));
+        User user = userRepository.save(user(tenant, "totp-user", "TOTP User"));
+        TotpCredential credential = totpCredentialRepository.save(
+                TotpCredential.create(user, "encrypted-secret-only"));
+
+        flushAndClear();
+
+        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        TotpCredential loadedCredential = totpCredentialRepository.findByUserId(user.getId()).orElseThrow();
+
+        assertThat(loadedUser.getClass().getDeclaredFields())
+                .extracting("name")
+                .doesNotContain("mfaSecret", "mfaEnabled");
+        assertThat(loadedCredential.getId()).isEqualTo(credential.getId());
+        assertThat(loadedCredential.getSecretCiphertext()).isEqualTo("encrypted-secret-only");
+        assertThat(loadedCredential.isEnabled()).isTrue();
     }
 
     @Test

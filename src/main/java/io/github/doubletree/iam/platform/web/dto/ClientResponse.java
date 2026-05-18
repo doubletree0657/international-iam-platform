@@ -25,7 +25,7 @@ public record ClientResponse(
                 client.getId(),
                 client.getTenant().getId(),
                 client.getClientId(),
-                client.getName(),
+                client.getClientName(),
                 client.getClientType(),
                 client.getStatus(),
                 client.isRequirePkce(),

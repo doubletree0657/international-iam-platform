@@ -60,6 +60,8 @@ Completed in the current pre-release reset:
 
 - Replaced the old Flyway migration chain with one baseline schema.
 - Moved password credential persistence out of the core user record.
+- Continued credential boundary cleanup by moving TOTP secret persistence out
+  of the core user record.
 - Added user profile and custom user attribute concepts.
 - Made group membership explicit.
 - Kept roles and permissions tenant-scoped.

@@ -22,6 +22,7 @@ import io.github.doubletree.iam.platform.application.exception.TenantBoundaryVio
 import io.github.doubletree.iam.platform.application.service.UserApplicationService;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.domain.Group;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
@@ -183,7 +184,8 @@ class CoreIamControllerTests {
     @Test
     void updatesUserPassword() throws Exception {
         User user = user("password-user", "Password User");
-        user.setPasswordHash("{bcrypt}sensitive-hash");
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash("{bcrypt}sensitive-hash");
         when(userApplicationService.updatePassword(eq(USER_ID), eq("new-password-123")))
                 .thenReturn(user);
 
@@ -309,7 +311,6 @@ class CoreIamControllerTests {
     @Test
     void readsScimUser() throws Exception {
         User user = user("read-scim-user", "Read SCIM User");
-        user.setMfaSecret("encrypted-secret");
         when(userApplicationService.findUser(eq(USER_ID)))
                 .thenReturn(user);
 

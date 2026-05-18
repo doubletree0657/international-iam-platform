@@ -62,11 +62,6 @@ public class User {
     @Column(nullable = false)
     private Instant updatedAt = Instant.now();
 
-    @Column(nullable = false)
-    private boolean mfaEnabled;
-
-    private String mfaSecret;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AccountStatus accountStatus = AccountStatus.PENDING;
@@ -213,54 +208,6 @@ public class User {
 
     public void setGroupMemberships(Set<GroupMembership> groupMemberships) {
         this.groupMemberships = groupMemberships;
-    }
-
-    public boolean isMfaEnabled() {
-        return mfaEnabled;
-    }
-
-    public void setMfaEnabled(boolean mfaEnabled) {
-        this.mfaEnabled = mfaEnabled;
-    }
-
-    public String getMfaSecret() {
-        return mfaSecret;
-    }
-
-    public void setMfaSecret(String mfaSecret) {
-        this.mfaSecret = mfaSecret;
-    }
-
-    public String getPasswordHash() {
-        return passwordCredential == null ? null : passwordCredential.getPasswordHash();
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        ensurePasswordCredential().setPasswordHash(passwordHash);
-    }
-
-    public Instant getPasswordUpdatedAt() {
-        return passwordCredential == null ? null : passwordCredential.getPasswordUpdatedAt();
-    }
-
-    public void setPasswordUpdatedAt(Instant passwordUpdatedAt) {
-        ensurePasswordCredential().setPasswordUpdatedAt(passwordUpdatedAt);
-    }
-
-    public boolean isPasswordResetRequired() {
-        return passwordCredential == null || passwordCredential.isPasswordResetRequired();
-    }
-
-    public void setPasswordResetRequired(boolean passwordResetRequired) {
-        ensurePasswordCredential().setPasswordResetRequired(passwordResetRequired);
-    }
-
-    public int getCredentialsVersion() {
-        return passwordCredential == null ? 1 : passwordCredential.getCredentialsVersion();
-    }
-
-    public void setCredentialsVersion(int credentialsVersion) {
-        ensurePasswordCredential().setCredentialsVersion(credentialsVersion);
     }
 
     public AccountStatus getAccountStatus() {

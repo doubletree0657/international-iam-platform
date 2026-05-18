@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.doubletree.iam.platform.domain.AccountStatus;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
@@ -184,7 +185,9 @@ class HttpLoginFlowTests {
 
     private User createUser(String username, String rawPassword, AccountStatus accountStatus) {
         User user = createUserWithoutPassword(username, accountStatus);
-        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash(passwordEncoder.encode(rawPassword));
+        credential.setPasswordResetRequired(false);
         return userRepository.save(user);
     }
 
@@ -192,7 +195,6 @@ class HttpLoginFlowTests {
         Tenant tenant = tenantRepository.save(Tenant.create(username + "-tenant"));
         User user = User.create(tenant, username, username + " Display");
         user.setAccountStatus(accountStatus);
-        user.setPasswordResetRequired(false);
         return userRepository.save(user);
     }
 }

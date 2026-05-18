@@ -30,7 +30,9 @@ public class ClientApplicationService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant not found: " + tenantId));
 
-        Client client = clientRepository.save(Client.create(tenant, clientId, name));
+        Client candidate = Client.create(tenant, clientId, name);
+        candidate.validateRegistration();
+        Client client = clientRepository.save(candidate);
         auditApplicationService.recordEvent(tenant.getId(), "CLIENT_CREATED", "CLIENT", client.getId());
         return client;
     }

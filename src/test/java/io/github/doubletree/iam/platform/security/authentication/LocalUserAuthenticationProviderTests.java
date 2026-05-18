@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.github.doubletree.iam.platform.application.service.AuditApplicationService;
 import io.github.doubletree.iam.platform.domain.AccountStatus;
 import io.github.doubletree.iam.platform.domain.AuditLog;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.repository.AuditLogRepository;
@@ -79,7 +80,7 @@ class LocalUserAuthenticationProviderTests {
         assertThat(authentication.getPrincipal()).isInstanceOf(PlatformUserDetails.class);
         PlatformUserDetails userDetails = (PlatformUserDetails) authentication.getPrincipal();
         assertThat(userDetails.userId()).isEqualTo(user.getId());
-        assertThat(userDetails.toString()).doesNotContain(user.getPasswordHash());
+        assertThat(userDetails.toString()).doesNotContain(user.getPasswordCredential().getPasswordHash());
         assertThat(authentication.getCredentials()).isNull();
         assertThat(auditLogRepository.findByAction("USER_AUTHENTICATION_SUCCEEDED"))
                 .singleElement()
@@ -88,7 +89,7 @@ class LocalUserAuthenticationProviderTests {
                     assertThat(auditLog.getResourceType()).isEqualTo("USER");
                     assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
                     assertAuditLogDoesNotContain(auditLog, "correct-password-123");
-                    assertAuditLogDoesNotContain(auditLog, user.getPasswordHash());
+                    assertAuditLogDoesNotContain(auditLog, user.getPasswordCredential().getPasswordHash());
                 });
     }
 
@@ -103,7 +104,7 @@ class LocalUserAuthenticationProviderTests {
                 .satisfies(auditLog -> {
                     assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
                     assertAuditLogDoesNotContain(auditLog, "wrong-password");
-                    assertAuditLogDoesNotContain(auditLog, user.getPasswordHash());
+                    assertAuditLogDoesNotContain(auditLog, user.getPasswordCredential().getPasswordHash());
                 });
     }
 
@@ -151,7 +152,9 @@ class LocalUserAuthenticationProviderTests {
 
     private User createUser(String username, String rawPassword, AccountStatus accountStatus) {
         User user = createUserWithoutPassword(username, accountStatus);
-        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash(passwordEncoder.encode(rawPassword));
+        credential.setPasswordResetRequired(false);
         return userRepository.save(user);
     }
 
@@ -159,12 +162,11 @@ class LocalUserAuthenticationProviderTests {
         Tenant tenant = tenantRepository.save(Tenant.create(username + "-tenant"));
         User user = User.create(tenant, username, username + " Display");
         user.setAccountStatus(accountStatus);
-        user.setPasswordResetRequired(false);
         return userRepository.save(user);
     }
 
     private void assertAuditLogDoesNotContain(AuditLog auditLog, String sensitiveValue) {
-        assertThat(auditLog.getActor()).doesNotContain(sensitiveValue);
+        assertThat(auditLog.getActorType().name()).doesNotContain(sensitiveValue);
         assertThat(auditLog.getAction()).doesNotContain(sensitiveValue);
         assertThat(auditLog.getResourceType()).doesNotContain(sensitiveValue);
     }

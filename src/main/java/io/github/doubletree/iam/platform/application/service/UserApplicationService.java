@@ -4,6 +4,7 @@ import io.github.doubletree.iam.platform.application.exception.EntityNotFoundExc
 import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.domain.AccountStatus;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
 import io.github.doubletree.iam.platform.domain.User;
@@ -78,7 +79,7 @@ public class UserApplicationService {
     public User setInitialPassword(UUID userId, String rawPassword) {
         User user = loadUser(userId);
         applyPasswordChange(user, rawPassword);
-        user.setPasswordResetRequired(false);
+        user.ensurePasswordCredential().setPasswordResetRequired(false);
         user.setAccountStatus(AccountStatus.ACTIVE);
         User savedUser = userRepository.save(user);
         auditApplicationService.recordEvent(
@@ -90,7 +91,7 @@ public class UserApplicationService {
     public User updatePassword(UUID userId, String rawPassword) {
         User user = loadUser(userId);
         applyPasswordChange(user, rawPassword);
-        user.setPasswordResetRequired(false);
+        user.ensurePasswordCredential().setPasswordResetRequired(false);
         User savedUser = userRepository.save(user);
         auditApplicationService.recordEvent(
                 savedUser.getTenant().getId(), "USER_PASSWORD_UPDATED", "USER", savedUser.getId());
@@ -100,7 +101,7 @@ public class UserApplicationService {
     @Transactional
     public User requirePasswordReset(UUID userId) {
         User user = loadUser(userId);
-        user.setPasswordResetRequired(true);
+        user.ensurePasswordCredential().setPasswordResetRequired(true);
         User savedUser = userRepository.save(user);
         auditApplicationService.recordEvent(
                 savedUser.getTenant().getId(), "USER_PASSWORD_RESET_REQUIRED", "USER", savedUser.getId());
@@ -110,7 +111,7 @@ public class UserApplicationService {
     @Transactional
     public User clearPasswordResetRequired(UUID userId) {
         User user = loadUser(userId);
-        user.setPasswordResetRequired(false);
+        user.ensurePasswordCredential().setPasswordResetRequired(false);
         User savedUser = userRepository.save(user);
         auditApplicationService.recordEvent(
                 savedUser.getTenant().getId(), "USER_PASSWORD_RESET_CLEARED", "USER", savedUser.getId());
@@ -124,9 +125,10 @@ public class UserApplicationService {
 
     private void applyPasswordChange(User user, String rawPassword) {
         validatePassword(rawPassword);
-        user.setPasswordHash(passwordEncoder.encode(rawPassword));
-        user.setPasswordUpdatedAt(Instant.now());
-        user.setCredentialsVersion(user.getCredentialsVersion() + 1);
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash(passwordEncoder.encode(rawPassword));
+        credential.setPasswordUpdatedAt(Instant.now());
+        credential.setCredentialsVersion(credential.getCredentialsVersion() + 1);
     }
 
     private void validatePassword(String rawPassword) {

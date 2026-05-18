@@ -1,6 +1,7 @@
 package io.github.doubletree.iam.platform.security.authentication;
 
 import io.github.doubletree.iam.platform.domain.AccountStatus;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.User;
 import java.util.Collection;
 import java.util.List;
@@ -17,11 +18,12 @@ public record PlatformUserDetails(
         implements UserDetails {
 
     public static PlatformUserDetails from(User user) {
+        PasswordCredential credential = user.getPasswordCredential();
         return new PlatformUserDetails(
                 user.getId(),
                 user.getTenant().getId(),
                 user.getUsername(),
-                user.getPasswordHash(),
+                credential == null ? null : credential.getPasswordHash(),
                 user.getAccountStatus());
     }
 

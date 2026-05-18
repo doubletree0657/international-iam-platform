@@ -48,12 +48,6 @@ public class Permission {
         return permission;
     }
 
-    public static Permission create(String name) {
-        Permission permission = new Permission();
-        permission.setName(name);
-        return permission;
-    }
-
     @PreUpdate
     void preUpdate() {
         updatedAt = Instant.now();

@@ -2,7 +2,9 @@ package io.github.doubletree.iam.platform.application.service;
 
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
 import io.github.doubletree.iam.platform.application.result.MfaEnrollmentResult;
+import io.github.doubletree.iam.platform.domain.TotpCredential;
 import io.github.doubletree.iam.platform.domain.User;
+import io.github.doubletree.iam.platform.repository.TotpCredentialRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import io.github.doubletree.iam.platform.security.crypto.SecretEncryptionService;
 import java.nio.ByteBuffer;
@@ -26,15 +28,18 @@ public class MfaApplicationService {
     private static final int TOTP_DIGITS = 6;
 
     private final UserRepository userRepository;
+    private final TotpCredentialRepository totpCredentialRepository;
     private final AuditApplicationService auditApplicationService;
     private final SecretEncryptionService secretEncryptionService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public MfaApplicationService(
             UserRepository userRepository,
+            TotpCredentialRepository totpCredentialRepository,
             AuditApplicationService auditApplicationService,
             SecretEncryptionService secretEncryptionService) {
         this.userRepository = userRepository;
+        this.totpCredentialRepository = totpCredentialRepository;
         this.auditApplicationService = auditApplicationService;
         this.secretEncryptionService = secretEncryptionService;
     }
@@ -43,26 +48,33 @@ public class MfaApplicationService {
     public MfaEnrollmentResult enrollTotp(UUID userId) {
         User user = findUser(userId);
         String secret = generateSecret();
+        String secretCiphertext = secretEncryptionService.encrypt(secret);
 
         // Development-level protection only: production systems should use secure external key management.
-        user.setMfaSecret(secretEncryptionService.encrypt(secret));
-        user.setMfaEnabled(true);
-        User savedUser = userRepository.save(user);
+        TotpCredential credential = totpCredentialRepository.findByUserId(user.getId())
+                .orElseGet(() -> TotpCredential.create(user, secretCiphertext));
+        credential.setSecretCiphertext(secretCiphertext);
+        credential.setEnabled(true);
+        credential.setVerifiedAt(null);
+        TotpCredential savedCredential = totpCredentialRepository.save(credential);
 
-        auditApplicationService.recordEvent(savedUser.getTenant().getId(), "MFA_ENROLLED", "USER", savedUser.getId());
-        return new MfaEnrollmentResult(savedUser.getId(), secret);
+        auditApplicationService.recordEvent(user.getTenant().getId(), "MFA_ENROLLED", "USER", user.getId());
+        return new MfaEnrollmentResult(savedCredential.getUser().getId(), secret);
     }
 
     @Transactional
     public boolean verifyTotp(UUID userId, String code) {
-        User user = findUser(userId);
-        if (!user.isMfaEnabled() || user.getMfaSecret() == null) {
+        TotpCredential credential = totpCredentialRepository.findByUserId(userId).orElse(null);
+        if (credential == null || !credential.isEnabled() || credential.getSecretCiphertext() == null) {
             return false;
         }
 
-        String secret = secretEncryptionService.decrypt(user.getMfaSecret());
+        String secret = secretEncryptionService.decrypt(credential.getSecretCiphertext());
         boolean valid = isValidTotpCode(secret, code, Instant.now());
         if (valid) {
+            credential.markVerified(Instant.now());
+            totpCredentialRepository.save(credential);
+            User user = credential.getUser();
             auditApplicationService.recordEvent(user.getTenant().getId(), "MFA_VERIFIED", "USER", user.getId());
         }
         return valid;
@@ -71,11 +83,9 @@ public class MfaApplicationService {
     @Transactional
     public void disableTotp(UUID userId) {
         User user = findUser(userId);
-        user.setMfaEnabled(false);
-        user.setMfaSecret(null);
-        User savedUser = userRepository.save(user);
+        totpCredentialRepository.deleteByUserId(userId);
 
-        auditApplicationService.recordEvent(savedUser.getTenant().getId(), "MFA_DISABLED", "USER", savedUser.getId());
+        auditApplicationService.recordEvent(user.getTenant().getId(), "MFA_DISABLED", "USER", user.getId());
     }
 
     String generateTotpCode(String secret, Instant instant) {

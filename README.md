@@ -42,9 +42,9 @@ GitLab CI pipeline.
 
 The project has performed a pre-release Flyway schema reset toward a stronger
 identity model. The current baseline includes tenant status, richer user
-identity fields, separate user profiles, password credentials, custom
-attributes, explicit group memberships, tenant-scoped RBAC, OAuth2 client
-registration concepts, and security event metadata.
+identity fields, separate user profiles, separate password and TOTP
+credentials, custom attributes, explicit group memberships, tenant-scoped
+RBAC, OAuth2 client registration concepts, and security event metadata.
 
 Login support currently uses Spring Security's default server-side form login as
 an early integration step for browser-based authorization work. It is not a

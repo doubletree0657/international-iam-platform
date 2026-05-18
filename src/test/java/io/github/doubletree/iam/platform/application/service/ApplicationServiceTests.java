@@ -8,24 +8,31 @@ import io.github.doubletree.iam.platform.application.exception.TenantBoundaryVio
 import io.github.doubletree.iam.platform.application.result.MfaEnrollmentResult;
 import io.github.doubletree.iam.platform.domain.AccountStatus;
 import io.github.doubletree.iam.platform.domain.AuditLog;
+import io.github.doubletree.iam.platform.domain.AuditActorType;
 import io.github.doubletree.iam.platform.domain.Client;
+import io.github.doubletree.iam.platform.domain.ClientType;
 import io.github.doubletree.iam.platform.domain.Group;
+import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Permission;
 import io.github.doubletree.iam.platform.domain.Role;
 import io.github.doubletree.iam.platform.domain.Tenant;
+import io.github.doubletree.iam.platform.domain.TotpCredential;
 import io.github.doubletree.iam.platform.domain.User;
 import io.github.doubletree.iam.platform.repository.AuditLogRepository;
 import io.github.doubletree.iam.platform.repository.ClientRepository;
 import io.github.doubletree.iam.platform.repository.GroupRepository;
+import io.github.doubletree.iam.platform.repository.PasswordCredentialRepository;
 import io.github.doubletree.iam.platform.repository.PermissionRepository;
 import io.github.doubletree.iam.platform.repository.RoleRepository;
 import io.github.doubletree.iam.platform.repository.TenantRepository;
+import io.github.doubletree.iam.platform.repository.TotpCredentialRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import io.github.doubletree.iam.platform.security.PasswordEncodingConfiguration;
 import io.github.doubletree.iam.platform.security.crypto.SecretEncryptionService;
 import io.github.doubletree.iam.platform.web.dto.UserResponse;
 import java.lang.reflect.RecordComponent;
 import java.time.Instant;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -110,6 +117,12 @@ class ApplicationServiceTests {
     @Autowired
     private AuditLogRepository auditLogRepository;
 
+    @Autowired
+    private PasswordCredentialRepository passwordCredentialRepository;
+
+    @Autowired
+    private TotpCredentialRepository totpCredentialRepository;
+
     @DynamicPropertySource
     static void registerDataSourceProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -135,7 +148,7 @@ class ApplicationServiceTests {
                 .singleElement()
                 .satisfies(auditLog -> {
                     assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
-                    assertThat(auditLog.getActor()).isEqualTo("api-client");
+                    assertThat(auditLog.getActorType()).isEqualTo(AuditActorType.API_CLIENT);
                     assertThat(auditLog.getResourceType()).isEqualTo("TENANT");
                     assertThat(auditLog.getResourceId()).isEqualTo(tenant.getId());
                     assertThat(auditLog.getCreatedAt()).isNotNull();
@@ -153,8 +166,7 @@ class ApplicationServiceTests {
         assertThat(loadedUser.getUsername()).isEqualTo("alice");
         assertThat(loadedUser.getDisplayName()).isEqualTo("Alice Example");
         assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
-        assertThat(loadedUser.isPasswordResetRequired()).isTrue();
-        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(1);
+        assertThat(loadedUser.getPasswordCredential()).isNull();
     }
 
     @Test
@@ -175,11 +187,15 @@ class ApplicationServiceTests {
         MfaEnrollmentResult enrollment = mfaApplicationService.enrollTotp(user.getId());
 
         User loadedUser = userRepository.findById(user.getId()).orElseThrow();
+        TotpCredential credential = totpCredentialRepository.findByUserId(user.getId()).orElseThrow();
         assertThat(enrollment.userId()).isEqualTo(user.getId());
         assertThat(enrollment.secret()).isNotBlank();
-        assertThat(loadedUser.isMfaEnabled()).isTrue();
-        assertThat(loadedUser.getMfaSecret()).isNotEqualTo(enrollment.secret());
-        assertThat(secretEncryptionService.decrypt(loadedUser.getMfaSecret())).isEqualTo(enrollment.secret());
+        assertThat(loadedUser.getClass().getDeclaredFields())
+                .extracting("name")
+                .doesNotContain("mfaSecret", "mfaEnabled");
+        assertThat(credential.isEnabled()).isTrue();
+        assertThat(credential.getSecretCiphertext()).isNotEqualTo(enrollment.secret());
+        assertThat(secretEncryptionService.decrypt(credential.getSecretCiphertext())).isEqualTo(enrollment.secret());
     }
 
     @Test
@@ -229,9 +245,7 @@ class ApplicationServiceTests {
 
         mfaApplicationService.disableTotp(user.getId());
 
-        User loadedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(loadedUser.isMfaEnabled()).isFalse();
-        assertThat(loadedUser.getMfaSecret()).isNull();
+        assertThat(totpCredentialRepository.findByUserId(user.getId())).isEmpty();
     }
 
     @Test
@@ -278,10 +292,11 @@ class ApplicationServiceTests {
     void userResponseDoesNotExposePasswordCredentialFields() {
         Tenant tenant = tenantApplicationService.createTenant("Password Response Tenant");
         User user = userApplicationService.createUser(tenant.getId(), "password-response-user", "Password Response");
-        user.setPasswordHash("$2a$10$sensitiveHash");
-        user.setPasswordUpdatedAt(Instant.parse("2026-01-01T00:00:00Z"));
-        user.setPasswordResetRequired(false);
-        user.setCredentialsVersion(3);
+        PasswordCredential credential = user.ensurePasswordCredential();
+        credential.setPasswordHash("$2a$10$sensitiveHash");
+        credential.setPasswordUpdatedAt(Instant.parse("2026-01-01T00:00:00Z"));
+        credential.setPasswordResetRequired(false);
+        credential.setCredentialsVersion(3);
         User savedUser = userRepository.save(user);
 
         UserResponse response = UserResponse.from(savedUser);
@@ -302,12 +317,13 @@ class ApplicationServiceTests {
         User updatedUser = userApplicationService.setInitialPassword(user.getId(), "initial-password-123");
 
         User loadedUser = userRepository.findById(updatedUser.getId()).orElseThrow();
-        assertThat(loadedUser.getPasswordHash()).isNotBlank();
-        assertThat(loadedUser.getPasswordHash()).isNotEqualTo("initial-password-123");
-        assertThat(passwordEncoder.matches("initial-password-123", loadedUser.getPasswordHash())).isTrue();
-        assertThat(loadedUser.getPasswordUpdatedAt()).isAfterOrEqualTo(beforePasswordSet);
-        assertThat(loadedUser.isPasswordResetRequired()).isFalse();
-        assertThat(loadedUser.getCredentialsVersion()).isEqualTo(2);
+        PasswordCredential credential = loadedUser.getPasswordCredential();
+        assertThat(credential.getPasswordHash()).isNotBlank();
+        assertThat(credential.getPasswordHash()).isNotEqualTo("initial-password-123");
+        assertThat(passwordEncoder.matches("initial-password-123", credential.getPasswordHash())).isTrue();
+        assertThat(credential.getPasswordUpdatedAt()).isAfterOrEqualTo(beforePasswordSet);
+        assertThat(credential.isPasswordResetRequired()).isFalse();
+        assertThat(credential.getCredentialsVersion()).isEqualTo(2);
         assertThat(loadedUser.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
@@ -316,16 +332,17 @@ class ApplicationServiceTests {
         Tenant tenant = tenantApplicationService.createTenant("Update Password Tenant");
         User user = userApplicationService.createUser(tenant.getId(), "update-password-user", "Update Password");
         User initialPasswordUser = userApplicationService.setInitialPassword(user.getId(), "first-password-123");
-        String initialPasswordHash = initialPasswordUser.getPasswordHash();
-        Instant initialPasswordUpdatedAt = initialPasswordUser.getPasswordUpdatedAt();
+        String initialPasswordHash = initialPasswordUser.getPasswordCredential().getPasswordHash();
+        Instant initialPasswordUpdatedAt = initialPasswordUser.getPasswordCredential().getPasswordUpdatedAt();
 
         User updatedUser = userApplicationService.updatePassword(user.getId(), "second-password-123");
 
-        assertThat(updatedUser.getPasswordHash()).isNotEqualTo(initialPasswordHash);
-        assertThat(passwordEncoder.matches("second-password-123", updatedUser.getPasswordHash())).isTrue();
-        assertThat(updatedUser.getCredentialsVersion()).isEqualTo(3);
-        assertThat(updatedUser.getPasswordUpdatedAt()).isAfterOrEqualTo(initialPasswordUpdatedAt);
-        assertThat(updatedUser.isPasswordResetRequired()).isFalse();
+        PasswordCredential credential = updatedUser.getPasswordCredential();
+        assertThat(credential.getPasswordHash()).isNotEqualTo(initialPasswordHash);
+        assertThat(passwordEncoder.matches("second-password-123", credential.getPasswordHash())).isTrue();
+        assertThat(credential.getCredentialsVersion()).isEqualTo(3);
+        assertThat(credential.getPasswordUpdatedAt()).isAfterOrEqualTo(initialPasswordUpdatedAt);
+        assertThat(credential.isPasswordResetRequired()).isFalse();
     }
 
     @Test
@@ -335,12 +352,12 @@ class ApplicationServiceTests {
         User passwordUser = userApplicationService.setInitialPassword(user.getId(), "reset-flag-password");
 
         User resetRequiredUser = userApplicationService.requirePasswordReset(passwordUser.getId());
-        assertThat(resetRequiredUser.isPasswordResetRequired()).isTrue();
-        assertThat(resetRequiredUser.getCredentialsVersion()).isEqualTo(2);
+        assertThat(resetRequiredUser.getPasswordCredential().isPasswordResetRequired()).isTrue();
+        assertThat(resetRequiredUser.getPasswordCredential().getCredentialsVersion()).isEqualTo(2);
 
         User clearedUser = userApplicationService.clearPasswordResetRequired(passwordUser.getId());
-        assertThat(clearedUser.isPasswordResetRequired()).isFalse();
-        assertThat(clearedUser.getCredentialsVersion()).isEqualTo(2);
+        assertThat(clearedUser.getPasswordCredential().isPasswordResetRequired()).isFalse();
+        assertThat(clearedUser.getPasswordCredential().getCredentialsVersion()).isEqualTo(2);
     }
 
     @ParameterizedTest
@@ -369,8 +386,20 @@ class ApplicationServiceTests {
                     assertThat(auditLog.getResourceType()).isEqualTo("USER");
                     assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
                     assertAuditLogDoesNotContain(auditLog, rawPassword);
-                    assertAuditLogDoesNotContain(auditLog, updatedUser.getPasswordHash());
+                    assertAuditLogDoesNotContain(auditLog, updatedUser.getPasswordCredential().getPasswordHash());
                 });
+    }
+
+    @Test
+    void passwordCredentialRepositoryOwnsPasswordState() {
+        Tenant tenant = tenantApplicationService.createTenant("Password Repository Tenant");
+        User user = userApplicationService.createUser(tenant.getId(), "credential-owner", "Credential Owner");
+
+        userApplicationService.setInitialPassword(user.getId(), "repository-password-123");
+
+        PasswordCredential credential = passwordCredentialRepository.findByUserId(user.getId()).orElseThrow();
+        assertThat(credential.getUser().getId()).isEqualTo(user.getId());
+        assertThat(passwordEncoder.matches("repository-password-123", credential.getPasswordHash())).isTrue();
     }
 
     @Test
@@ -421,7 +450,7 @@ class ApplicationServiceTests {
                 .singleElement()
                 .satisfies(auditLog -> {
                     assertThat(auditLog.getTenantId()).isEqualTo(tenant.getId());
-                    assertThat(auditLog.getActor()).isEqualTo("api-client");
+                    assertThat(auditLog.getActorType()).isEqualTo(AuditActorType.API_CLIENT);
                     assertThat(auditLog.getResourceType()).isEqualTo("USER");
                     assertThat(auditLog.getResourceId()).isEqualTo(user.getId());
                 });
@@ -465,7 +494,51 @@ class ApplicationServiceTests {
         Client loadedClient = clientRepository.findById(client.getId()).orElseThrow();
         assertThat(loadedClient.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedClient.getClientId()).isEqualTo("portal");
-        assertThat(loadedClient.getName()).isEqualTo("Portal");
+        assertThat(loadedClient.getClientName()).isEqualTo("Portal");
+    }
+
+    @Test
+    void permissionCreationRequiresTenantContext() {
+        assertThat(Permission.class.getDeclaredMethods())
+                .filteredOn(method -> method.getName().equals("create"))
+                .allSatisfy(method -> assertThat(method.getParameterTypes()).contains(Tenant.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " "})
+    void clientValidationRejectsBlankConfigurationValues(String blankValue) {
+        Tenant tenant = tenantApplicationService.createTenant("Invalid Client Tenant " + blankValue.length());
+        Client client = Client.create(tenant, "invalid-client-" + blankValue.length(), "Invalid Client");
+
+        assertThatThrownBy(() -> client.setRedirectUris(Set.of(blankValue)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client redirect URI must not be blank");
+        assertThatThrownBy(() -> client.setGrantTypes(Set.of(blankValue)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client grant type must not be blank");
+        assertThatThrownBy(() -> client.setScopes(Set.of(blankValue)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client scope must not be blank");
+        assertThatThrownBy(() -> client.setAuthenticationMethods(Set.of(blankValue)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client authentication method must not be blank");
+    }
+
+    @Test
+    void publicClientValidationRejectsSecretConfigurationAndMissingPkce() {
+        Tenant tenant = tenantApplicationService.createTenant("Public Client Tenant");
+        Client client = Client.create(tenant, "public-client", "Public Client");
+        client.setClientType(ClientType.PUBLIC);
+
+        assertThatThrownBy(() -> client.setClientSecretHash("secret-hash"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Public clients must not have a client secret");
+        assertThatThrownBy(() -> client.setRequirePkce(false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Public clients must require PKCE");
+        assertThatThrownBy(client::validateRegistration)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Public clients must not use client secret authentication");
     }
 
     @Test
@@ -582,7 +655,7 @@ class ApplicationServiceTests {
     }
 
     private void assertNoSensitiveData(AuditLog auditLog) {
-        assertThat(auditLog.getActor())
+        assertThat(auditLog.getActorType().name())
                 .doesNotContainIgnoringCase("secret")
                 .doesNotContainIgnoringCase("token")
                 .doesNotContainIgnoringCase("password");
@@ -597,7 +670,7 @@ class ApplicationServiceTests {
     }
 
     private void assertAuditLogDoesNotContain(AuditLog auditLog, String sensitiveValue) {
-        assertThat(auditLog.getActor()).doesNotContain(sensitiveValue);
+        assertThat(auditLog.getActorType().name()).doesNotContain(sensitiveValue);
         assertThat(auditLog.getAction()).doesNotContain(sensitiveValue);
         assertThat(auditLog.getResourceType()).doesNotContain(sensitiveValue);
         assertThat(auditLog.getResourceId().toString()).doesNotContain(sensitiveValue);

@@ -86,11 +86,11 @@ public class Client {
     protected Client() {
     }
 
-    public static Client create(Tenant tenant, String clientId, String name) {
+    public static Client create(Tenant tenant, String clientId, String clientName) {
         Client client = new Client();
         client.setTenant(tenant);
         client.setClientId(clientId);
-        client.setClientName(name);
+        client.setClientName(clientName);
         client.getGrantTypes().add("authorization_code");
         client.getScopes().add("iam.read");
         client.getAuthenticationMethods().add("client_secret_basic");
@@ -126,14 +126,6 @@ public class Client {
         this.clientId = clientId;
     }
 
-    public String getName() {
-        return clientName;
-    }
-
-    public void setName(String name) {
-        this.clientName = name;
-    }
-
     public String getClientName() {
         return clientName;
     }
@@ -147,6 +139,9 @@ public class Client {
     }
 
     public void setClientType(ClientType clientType) {
+        if (clientType == ClientType.PUBLIC && hasText(clientSecretHash)) {
+            throw new IllegalArgumentException("Public clients must not have a client secret");
+        }
         this.clientType = clientType;
     }
 
@@ -155,6 +150,9 @@ public class Client {
     }
 
     public void setClientSecretHash(String clientSecretHash) {
+        if (clientType == ClientType.PUBLIC && hasText(clientSecretHash)) {
+            throw new IllegalArgumentException("Public clients must not have a client secret");
+        }
         this.clientSecretHash = clientSecretHash;
     }
 
@@ -171,6 +169,9 @@ public class Client {
     }
 
     public void setRequirePkce(boolean requirePkce) {
+        if (clientType == ClientType.PUBLIC && !requirePkce) {
+            throw new IllegalArgumentException("Public clients must require PKCE");
+        }
         this.requirePkce = requirePkce;
     }
 
@@ -187,6 +188,7 @@ public class Client {
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
+        rejectBlankValues(redirectUris, "redirect URI");
         this.redirectUris = redirectUris;
     }
 
@@ -195,6 +197,7 @@ public class Client {
     }
 
     public void setGrantTypes(Set<String> grantTypes) {
+        rejectBlankValues(grantTypes, "grant type");
         this.grantTypes = grantTypes;
     }
 
@@ -203,6 +206,7 @@ public class Client {
     }
 
     public void setScopes(Set<String> scopes) {
+        rejectBlankValues(scopes, "scope");
         this.scopes = scopes;
     }
 
@@ -211,7 +215,37 @@ public class Client {
     }
 
     public void setAuthenticationMethods(Set<String> authenticationMethods) {
+        rejectBlankValues(authenticationMethods, "authentication method");
         this.authenticationMethods = authenticationMethods;
+    }
+
+    public void validateRegistration() {
+        rejectBlankValues(redirectUris, "redirect URI");
+        rejectBlankValues(grantTypes, "grant type");
+        rejectBlankValues(scopes, "scope");
+        rejectBlankValues(authenticationMethods, "authentication method");
+        if (clientType == ClientType.PUBLIC) {
+            if (hasText(clientSecretHash)) {
+                throw new IllegalArgumentException("Public clients must not have a client secret");
+            }
+            if (!requirePkce) {
+                throw new IllegalArgumentException("Public clients must require PKCE");
+            }
+            if (authenticationMethods != null
+                    && authenticationMethods.stream().anyMatch(method -> method.startsWith("client_secret"))) {
+                throw new IllegalArgumentException("Public clients must not use client secret authentication");
+            }
+        }
+    }
+
+    private void rejectBlankValues(Set<String> values, String valueName) {
+        if (values != null && values.stream().anyMatch(value -> !hasText(value))) {
+            throw new IllegalArgumentException("Client " + valueName + " must not be blank");
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     public Instant getCreatedAt() {

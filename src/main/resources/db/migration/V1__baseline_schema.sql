@@ -19,8 +19,6 @@ CREATE TABLE users (
     phone_number VARCHAR(64),
     phone_number_verified BOOLEAN NOT NULL DEFAULT FALSE,
     account_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-    mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-    mfa_secret VARCHAR(1024),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_users_tenant_username UNIQUE (tenant_id, username),
@@ -58,6 +56,18 @@ CREATE TABLE password_credentials (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_password_credentials_user UNIQUE (user_id),
     CONSTRAINT fk_password_credentials_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE totp_credentials (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    secret_ciphertext VARCHAR(1024) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_totp_credentials_user UNIQUE (user_id),
+    CONSTRAINT fk_totp_credentials_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE user_attributes (
@@ -189,6 +199,7 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_users_tenant_account_status ON users (tenant_id, account_status);
+CREATE INDEX idx_totp_credentials_user_id ON totp_credentials (user_id);
 CREATE INDEX idx_group_memberships_user_id ON group_memberships (user_id);
 CREATE INDEX idx_audit_logs_tenant_id_created_at ON audit_logs (tenant_id, created_at);
 CREATE INDEX idx_audit_logs_resource ON audit_logs (resource_type, resource_id);

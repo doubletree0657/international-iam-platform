@@ -86,14 +86,6 @@ public class AuditLog {
         this.tenantId = tenantId;
     }
 
-    public String getActor() {
-        return actorType.name().toLowerCase().replace('_', '-');
-    }
-
-    public void setActor(String actor) {
-        this.actorType = AuditActorType.API_CLIENT;
-    }
-
     public AuditActorType getActorType() {
         return actorType;
     }
