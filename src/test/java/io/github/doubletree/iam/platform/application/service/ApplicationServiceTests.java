@@ -522,6 +522,13 @@ class ApplicationServiceTests {
     }
 
     @Test
+    void clientCreationApiPreservesOneTimeSecretResult() {
+        assertThat(ClientApplicationService.class.getDeclaredMethods())
+                .filteredOn(method -> method.getName().equals("createClient"))
+                .isEmpty();
+    }
+
+    @Test
     void createsPublicClientWithoutSecret() {
         Tenant tenant = tenantApplicationService.createTenant("Public Client Tenant");
 
@@ -585,6 +592,58 @@ class ApplicationServiceTests {
     }
 
     @Test
+    void clientCredentialsClientCanBeCreatedWithoutRedirectUri() {
+        Tenant tenant = tenantApplicationService.createTenant("Client Credentials Tenant");
+
+        ClientSecretResult result = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "machine-client",
+                "Machine Client",
+                ClientType.CONFIDENTIAL,
+                false,
+                false,
+                null,
+                Set.of("client_credentials"),
+                Set.of("iam.write"),
+                Set.of("client_secret_basic"));
+
+        assertThat(result.clientSecret()).isNotBlank();
+        assertThat(result.client().getRedirectUris()).isEmpty();
+        assertThat(passwordEncoder.matches(result.clientSecret(), result.client().getClientSecretHash())).isTrue();
+    }
+
+    @Test
+    void confidentialClientWithoutSecretAuthenticationDoesNotForceSecret() {
+        Tenant tenant = tenantApplicationService.createTenant("Confidential Non Secret Tenant");
+
+        ClientSecretResult result = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "non-secret-confidential-client",
+                "Non Secret Confidential Client",
+                ClientType.CONFIDENTIAL,
+                false,
+                false,
+                null,
+                Set.of("client_credentials"),
+                Set.of("iam.read"),
+                Set.of("none"));
+
+        assertThat(result.clientSecret()).isNull();
+        assertThat(result.client().getClientSecretHash()).isNull();
+        assertThat(result.client().getClientType()).isEqualTo(ClientType.CONFIDENTIAL);
+    }
+
+    @Test
+    void updateDoesNotAllowChangingClientType() {
+        assertThat(io.github.doubletree.iam.platform.web.dto.UpdateClientRequest.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .doesNotContain("clientType");
+        assertThat(ClientApplicationService.class.getDeclaredMethods())
+                .filteredOn(method -> method.getName().equals("updateClient"))
+                .allSatisfy(method -> assertThat(method.getParameterTypes()).doesNotContain(ClientType.class));
+    }
+
+    @Test
     void rotatingConfidentialClientSecretChangesStoredHash() {
         Tenant tenant = tenantApplicationService.createTenant("Client Rotation Tenant");
         ClientSecretResult created = clientApplicationService.createClientWithSecret(
@@ -629,6 +688,54 @@ class ApplicationServiceTests {
         assertThatThrownBy(() -> clientApplicationService.rotateClientSecret(publicClient.getId()))
                 .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Public clients do not have client secrets");
+    }
+
+    @Test
+    void authorizationCodeClientRequiresRedirectUri() {
+        Tenant tenant = tenantApplicationService.createTenant("Authorization Code Redirect Tenant");
+
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "auth-code-null-redirect",
+                        "Auth Code Null Redirect",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        null,
+                        Set.of("authorization_code"),
+                        Set.of("iam.read"),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
+                .hasMessage("Authorization code clients must have at least one redirect URI");
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "auth-code-empty-redirect",
+                        "Auth Code Empty Redirect",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        Set.of(),
+                        Set.of("authorization_code"),
+                        Set.of("iam.read"),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
+                .hasMessage("Authorization code clients must have at least one redirect URI");
+    }
+
+    @Test
+    void clientCollectionMutationBypassIsPrevented() {
+        Tenant tenant = tenantApplicationService.createTenant("Client Collection Boundary Tenant");
+        Client client = Client.create(tenant, "collection-client", "Collection Client");
+
+        assertThatThrownBy(() -> client.getRedirectUris().add("https://bypass.example.test/callback"))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> client.addRedirectUri(" "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Client redirect URI must not be blank");
+        client.replaceGrantTypes(Set.of("authorization_code"));
+        assertThatThrownBy(client::validateRegistration)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Authorization code clients must have at least one redirect URI");
     }
 
     @Test
@@ -856,7 +963,17 @@ class ApplicationServiceTests {
     void auditLogDoesNotIncludeSensitiveData() {
         Tenant tenant = tenantApplicationService.createTenant("Sensitive Audit Tenant");
 
-        clientApplicationService.createClient(tenant.getId(), "secret-client-id", "Client With Secret");
+        clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "secret-client-id",
+                "Client With Secret",
+                ClientType.CONFIDENTIAL,
+                false,
+                false,
+                null,
+                Set.of("client_credentials"),
+                Set.of("iam.read"),
+                Set.of("client_secret_basic"));
 
         assertThat(auditLogRepository.findByAction("CLIENT_CREATED"))
                 .singleElement()

@@ -39,22 +39,6 @@ public class ClientApplicationService {
     }
 
     @Transactional
-    public Client createClient(UUID tenantId, String clientId, String name) {
-        return createClientWithSecret(
-                        tenantId,
-                        clientId,
-                        name,
-                        ClientType.CONFIDENTIAL,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null)
-                .client();
-    }
-
-    @Transactional
     public ClientSecretResult createClientWithSecret(
             UUID tenantId,
             String clientId,
@@ -84,7 +68,8 @@ public class ClientApplicationService {
                 authenticationMethods);
 
         String rawSecret = null;
-        if (candidate.getClientType() == ClientType.CONFIDENTIAL) {
+        if (candidate.getClientType() == ClientType.CONFIDENTIAL
+                && usesClientSecretAuthentication(candidate.getAuthenticationMethods())) {
             rawSecret = generateClientSecret();
             candidate.setClientSecretHash(passwordEncoder.encode(rawSecret));
         }
@@ -173,16 +158,16 @@ public class ClientApplicationService {
             client.setRequireConsent(requireConsent);
         }
         if (redirectUris != null) {
-            client.setRedirectUris(copyValues(redirectUris));
+            client.replaceRedirectUris(copyValues(redirectUris));
         }
         if (grantTypes != null) {
-            client.setGrantTypes(copyValues(grantTypes));
+            client.replaceGrantTypes(copyValues(grantTypes));
         }
         if (scopes != null) {
-            client.setScopes(copyValues(scopes));
+            client.replaceScopes(copyValues(scopes));
         }
         if (authenticationMethods != null) {
-            client.setAuthenticationMethods(copyValues(authenticationMethods));
+            client.replaceAuthenticationMethods(copyValues(authenticationMethods));
         }
         if (client.getClientType() == ClientType.PUBLIC) {
             client.setClientSecretHash(null);
@@ -227,6 +212,11 @@ public class ClientApplicationService {
         } catch (IllegalArgumentException exception) {
             throw new ClientValidationException(exception.getMessage());
         }
+    }
+
+    private boolean usesClientSecretAuthentication(Set<String> authenticationMethods) {
+        return authenticationMethods != null
+                && authenticationMethods.stream().anyMatch(method -> method.startsWith("client_secret"));
     }
 
     private String generateClientSecret() {

@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -91,9 +92,9 @@ public class Client {
         client.setTenant(tenant);
         client.setClientId(clientId);
         client.setClientName(clientName);
-        client.getGrantTypes().add("authorization_code");
-        client.getScopes().add("iam.read");
-        client.getAuthenticationMethods().add("client_secret_basic");
+        client.addGrantType("authorization_code");
+        client.addScope("iam.read");
+        client.addAuthenticationMethod("client_secret_basic");
         return client;
     }
 
@@ -139,6 +140,9 @@ public class Client {
     }
 
     public void setClientType(ClientType clientType) {
+        if (id != null && this.clientType != null && clientType != null && this.clientType != clientType) {
+            throw new IllegalArgumentException("Client type is immutable after creation");
+        }
         if (clientType == ClientType.PUBLIC && hasText(clientSecretHash)) {
             throw new IllegalArgumentException("Public clients must not have a client secret");
         }
@@ -184,39 +188,87 @@ public class Client {
     }
 
     public Set<String> getRedirectUris() {
-        return redirectUris;
+        return Collections.unmodifiableSet(redirectUris);
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
-        rejectBlankValues(redirectUris, "redirect URI");
-        this.redirectUris = redirectUris;
+        replaceRedirectUris(redirectUris);
     }
 
     public Set<String> getGrantTypes() {
-        return grantTypes;
+        return Collections.unmodifiableSet(grantTypes);
     }
 
     public void setGrantTypes(Set<String> grantTypes) {
-        rejectBlankValues(grantTypes, "grant type");
-        this.grantTypes = grantTypes;
+        replaceGrantTypes(grantTypes);
     }
 
     public Set<String> getScopes() {
-        return scopes;
+        return Collections.unmodifiableSet(scopes);
     }
 
     public void setScopes(Set<String> scopes) {
-        rejectBlankValues(scopes, "scope");
-        this.scopes = scopes;
+        replaceScopes(scopes);
     }
 
     public Set<String> getAuthenticationMethods() {
-        return authenticationMethods;
+        return Collections.unmodifiableSet(authenticationMethods);
     }
 
     public void setAuthenticationMethods(Set<String> authenticationMethods) {
+        replaceAuthenticationMethods(authenticationMethods);
+    }
+
+    public void replaceRedirectUris(Set<String> redirectUris) {
+        rejectBlankValues(redirectUris, "redirect URI");
+        this.redirectUris.clear();
+        if (redirectUris != null) {
+            this.redirectUris.addAll(redirectUris);
+        }
+    }
+
+    public void replaceGrantTypes(Set<String> grantTypes) {
+        rejectBlankValues(grantTypes, "grant type");
+        this.grantTypes.clear();
+        if (grantTypes != null) {
+            this.grantTypes.addAll(grantTypes);
+        }
+    }
+
+    public void replaceScopes(Set<String> scopes) {
+        rejectBlankValues(scopes, "scope");
+        this.scopes.clear();
+        if (scopes != null) {
+            this.scopes.addAll(scopes);
+        }
+    }
+
+    public void replaceAuthenticationMethods(Set<String> authenticationMethods) {
         rejectBlankValues(authenticationMethods, "authentication method");
-        this.authenticationMethods = authenticationMethods;
+        this.authenticationMethods.clear();
+        if (authenticationMethods != null) {
+            this.authenticationMethods.addAll(authenticationMethods);
+        }
+    }
+
+    public void addRedirectUri(String redirectUri) {
+        rejectBlankValue(redirectUri, "redirect URI");
+        redirectUris.add(redirectUri);
+    }
+
+    public void addGrantType(String grantType) {
+        rejectBlankValue(grantType, "grant type");
+        grantTypes.add(grantType);
+    }
+
+    public void addScope(String scope) {
+        rejectBlankValue(scope, "scope");
+        scopes.add(scope);
+    }
+
+    public void addAuthenticationMethod(String authenticationMethod) {
+        rejectBlankValue(authenticationMethod, "authentication method");
+        authenticationMethods.add(authenticationMethod);
     }
 
     public void validateRegistration() {
@@ -224,6 +276,11 @@ public class Client {
         rejectBlankValues(grantTypes, "grant type");
         rejectBlankValues(scopes, "scope");
         rejectBlankValues(authenticationMethods, "authentication method");
+        if (grantTypes != null
+                && grantTypes.contains("authorization_code")
+                && (redirectUris == null || redirectUris.isEmpty())) {
+            throw new IllegalArgumentException("Authorization code clients must have at least one redirect URI");
+        }
         if (clientType == ClientType.PUBLIC) {
             if (hasText(clientSecretHash)) {
                 throw new IllegalArgumentException("Public clients must not have a client secret");
@@ -247,6 +304,12 @@ public class Client {
 
     private void rejectBlankValues(Set<String> values, String valueName) {
         if (values != null && values.stream().anyMatch(value -> !hasText(value))) {
+            throw new IllegalArgumentException("Client " + valueName + " must not be blank");
+        }
+    }
+
+    private void rejectBlankValue(String value, String valueName) {
+        if (!hasText(value)) {
             throw new IllegalArgumentException("Client " + valueName + " must not be blank");
         }
     }

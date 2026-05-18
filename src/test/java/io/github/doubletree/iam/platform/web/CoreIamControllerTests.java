@@ -305,9 +305,10 @@ class CoreIamControllerTests {
 
     @Test
     void createsPublicClientThroughApiWithoutSecret() throws Exception {
-        Client client = client("public-portal", "Public Portal");
+        Client client = Client.create(tenant("Test Tenant"), "public-portal", "Public Portal");
         client.setClientType(ClientType.PUBLIC);
         client.setAuthenticationMethods(java.util.Set.of("none"));
+        client.setId(CLIENT_ID);
         when(clientApplicationService.createClientWithSecret(
                         eq(TENANT_ID),
                         eq("public-portal"),
