@@ -1,5 +1,6 @@
 package io.github.doubletree.iam.platform.web;
 
+import io.github.doubletree.iam.platform.application.exception.ClientValidationException;
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
 import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
@@ -29,6 +30,12 @@ public class RestExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handlePasswordValidation(PasswordValidationException exception) {
         return new ErrorResponse("password_validation_error", exception.getMessage());
+    }
+
+    @ExceptionHandler(ClientValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleClientValidation(ClientValidationException exception) {
+        return new ErrorResponse("client_validation_error", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

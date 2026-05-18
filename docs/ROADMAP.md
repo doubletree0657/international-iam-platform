@@ -24,6 +24,8 @@ The codebase currently includes:
 - REST APIs with DTO validation, centralized error handling, and OpenAPI output.
 - Spring Authorization Server integration, JWT/JWK support, and scope-protected
   APIs using `iam.read` and `iam.write`.
+- OAuth2 client management APIs for safe creation, update, and confidential
+  client secret rotation.
 - Spring Security default form login for early browser-based authorization
   integration.
 - TOTP enrollment and verification, including encrypted MFA secret storage.
@@ -115,12 +117,15 @@ rather than local development configuration.
 
 Candidate slices:
 
+- Repository-backed Spring Authorization Server integration.
+
+Completed slices:
+
 - Persistent client registration model.
 - Client secret hashing, rotation, and display rules.
-- Redirect URI, scope, grant type, and token settings management.
+- Redirect URI, scope, grant type, and authentication method management.
 - Public versus confidential client behavior.
 - Administrative APIs with validation and audit events.
-- Repository-backed Spring Authorization Server integration.
 
 ## MFA and Strong Authentication
 

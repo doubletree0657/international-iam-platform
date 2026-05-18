@@ -1,5 +1,6 @@
 package io.github.doubletree.iam.platform.web;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,7 +11,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.github.doubletree.iam.platform.application.exception.ClientValidationException;
 import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
+import io.github.doubletree.iam.platform.application.result.ClientSecretResult;
 import io.github.doubletree.iam.platform.authorization.AuthorizationServerConfiguration;
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
 import io.github.doubletree.iam.platform.application.exception.EntityNotFoundException;
@@ -21,6 +24,8 @@ import io.github.doubletree.iam.platform.application.service.TenantApplicationSe
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
 import io.github.doubletree.iam.platform.application.service.UserApplicationService;
 import io.github.doubletree.iam.platform.domain.Client;
+import io.github.doubletree.iam.platform.domain.ClientStatus;
+import io.github.doubletree.iam.platform.domain.ClientType;
 import io.github.doubletree.iam.platform.domain.Group;
 import io.github.doubletree.iam.platform.domain.PasswordCredential;
 import io.github.doubletree.iam.platform.domain.Permission;
@@ -264,8 +269,20 @@ class CoreIamControllerTests {
 
     @Test
     void createsClientUnderTenant() throws Exception {
-        when(clientApplicationService.createClient(eq(TENANT_ID), eq("portal"), eq("Portal")))
-                .thenReturn(client("portal", "Portal"));
+        Client client = client("portal", "Portal");
+        client.setClientSecretHash("{bcrypt}sensitive-client-secret-hash");
+        when(clientApplicationService.createClientWithSecret(
+                        eq(TENANT_ID),
+                        eq("portal"),
+                        eq("Portal"),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                .thenReturn(new ClientSecretResult(client, "raw-client-secret-once"));
 
         mockMvc.perform(post("/api/clients")
                         .with(writeScopeJwt)
@@ -278,10 +295,138 @@ class CoreIamControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.client.id").value(CLIENT_ID.toString()))
+                .andExpect(jsonPath("$.client.tenantId").value(TENANT_ID.toString()))
+                .andExpect(jsonPath("$.client.clientId").value("portal"))
+                .andExpect(jsonPath("$.client.name").value("Portal"))
+                .andExpect(jsonPath("$.client.clientSecretHash").doesNotExist())
+                .andExpect(jsonPath("$.clientSecret").value("raw-client-secret-once"));
+    }
+
+    @Test
+    void createsPublicClientThroughApiWithoutSecret() throws Exception {
+        Client client = client("public-portal", "Public Portal");
+        client.setClientType(ClientType.PUBLIC);
+        client.setAuthenticationMethods(java.util.Set.of("none"));
+        when(clientApplicationService.createClientWithSecret(
+                        eq(TENANT_ID),
+                        eq("public-portal"),
+                        eq("Public Portal"),
+                        eq(ClientType.PUBLIC),
+                        eq(true),
+                        eq(false),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                .thenReturn(new ClientSecretResult(client, null));
+
+        mockMvc.perform(post("/api/clients")
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "clientId":"public-portal",
+                                  "name":"Public Portal",
+                                  "clientType":"PUBLIC",
+                                  "requirePkce":true,
+                                  "requireConsent":false,
+                                  "redirectUris":["https://public.example.test/callback"],
+                                  "grantTypes":["authorization_code"],
+                                  "scopes":["openid"],
+                                  "authenticationMethods":["none"]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.client.clientType").value("PUBLIC"))
+                .andExpect(jsonPath("$.clientSecret").doesNotExist());
+    }
+
+    @Test
+    void updatesClientThroughApi() throws Exception {
+        Client client = client("portal", "Portal Updated");
+        client.setStatus(ClientStatus.DISABLED);
+        when(clientApplicationService.updateClient(
+                        eq(CLIENT_ID),
+                        eq("Portal Updated"),
+                        eq(ClientStatus.DISABLED),
+                        eq(true),
+                        eq(false),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                .thenReturn(client);
+
+        mockMvc.perform(put("/api/clients/{clientId}", CLIENT_ID)
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientName":"Portal Updated",
+                                  "status":"DISABLED",
+                                  "requirePkce":true,
+                                  "requireConsent":false,
+                                  "redirectUris":["https://portal.example.test/callback"],
+                                  "grantTypes":["authorization_code"],
+                                  "scopes":["iam.read"],
+                                  "authenticationMethods":["client_secret_basic"]
+                                }
+                                """))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(CLIENT_ID.toString()))
-                .andExpect(jsonPath("$.tenantId").value(TENANT_ID.toString()))
-                .andExpect(jsonPath("$.clientId").value("portal"))
-                .andExpect(jsonPath("$.name").value("Portal"));
+                .andExpect(jsonPath("$.name").value("Portal Updated"))
+                .andExpect(jsonPath("$.status").value("DISABLED"))
+                .andExpect(jsonPath("$.clientSecretHash").doesNotExist());
+    }
+
+    @Test
+    void rotatesClientSecretThroughApi() throws Exception {
+        Client client = client("portal", "Portal");
+        client.setClientSecretHash("{bcrypt}rotated-secret-hash");
+        when(clientApplicationService.rotateClientSecret(eq(CLIENT_ID)))
+                .thenReturn(new ClientSecretResult(client, "rotated-client-secret-once"));
+
+        mockMvc.perform(post("/api/clients/{clientId}/secret/rotation", CLIENT_ID)
+                        .with(writeScopeJwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.client.id").value(CLIENT_ID.toString()))
+                .andExpect(jsonPath("$.client.clientSecretHash").doesNotExist())
+                .andExpect(jsonPath("$.clientSecret").value("rotated-client-secret-once"));
+    }
+
+    @Test
+    void invalidClientConfigurationReturnsBadRequest() throws Exception {
+        when(clientApplicationService.createClientWithSecret(
+                        eq(TENANT_ID),
+                        eq("public-secret-auth"),
+                        eq("Public Secret Auth"),
+                        eq(ClientType.PUBLIC),
+                        eq(true),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                .thenThrow(new ClientValidationException("Public clients must not use client secret authentication"));
+
+        mockMvc.perform(post("/api/clients")
+                        .with(writeScopeJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId":"00000000-0000-0000-0000-000000000001",
+                                  "clientId":"public-secret-auth",
+                                  "name":"Public Secret Auth",
+                                  "clientType":"PUBLIC",
+                                  "requirePkce":true,
+                                  "authenticationMethods":["client_secret_basic"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("client_validation_error"))
+                .andExpect(jsonPath("$.message").value("Public clients must not use client secret authentication"));
     }
 
     @Test

@@ -1,14 +1,20 @@
 package io.github.doubletree.iam.platform.web;
 
 import io.github.doubletree.iam.platform.application.service.ClientApplicationService;
+import io.github.doubletree.iam.platform.application.result.ClientSecretResult;
 import io.github.doubletree.iam.platform.domain.Client;
 import io.github.doubletree.iam.platform.web.dto.ClientResponse;
+import io.github.doubletree.iam.platform.web.dto.ClientSecretResponse;
 import io.github.doubletree.iam.platform.web.dto.CreateClientRequest;
+import io.github.doubletree.iam.platform.web.dto.UpdateClientRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,8 +36,42 @@ public class ClientController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create client", description = "Requires iam.write scope.")
-    public ClientResponse createClient(@Valid @RequestBody CreateClientRequest request) {
-        Client client = clientApplicationService.createClient(request.tenantId(), request.clientId(), request.name());
+    public ClientSecretResponse createClient(@Valid @RequestBody CreateClientRequest request) {
+        ClientSecretResult result = clientApplicationService.createClientWithSecret(
+                request.tenantId(),
+                request.clientId(),
+                request.name(),
+                request.clientType(),
+                request.requirePkce(),
+                request.requireConsent(),
+                request.redirectUris(),
+                request.grantTypes(),
+                request.scopes(),
+                request.authenticationMethods());
+        return ClientSecretResponse.from(result);
+    }
+
+    @PutMapping("/{clientId}")
+    @Operation(summary = "Update client", description = "Requires iam.write scope.")
+    public ClientResponse updateClient(
+            @PathVariable UUID clientId,
+            @Valid @RequestBody UpdateClientRequest request) {
+        Client client = clientApplicationService.updateClient(
+                clientId,
+                request.clientName(),
+                request.status(),
+                request.requirePkce(),
+                request.requireConsent(),
+                request.redirectUris(),
+                request.grantTypes(),
+                request.scopes(),
+                request.authenticationMethods());
         return ClientResponse.from(client);
+    }
+
+    @PostMapping("/{clientId}/secret/rotation")
+    @Operation(summary = "Rotate client secret", description = "Requires iam.write scope.")
+    public ClientSecretResponse rotateClientSecret(@PathVariable UUID clientId) {
+        return ClientSecretResponse.from(clientApplicationService.rotateClientSecret(clientId));
     }
 }

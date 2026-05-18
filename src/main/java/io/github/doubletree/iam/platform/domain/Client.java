@@ -236,6 +236,13 @@ public class Client {
                 throw new IllegalArgumentException("Public clients must not use client secret authentication");
             }
         }
+        if (clientType == ClientType.CONFIDENTIAL
+                && authenticationMethods != null
+                && authenticationMethods.stream().anyMatch(method -> method.startsWith("client_secret"))
+                && !hasText(clientSecretHash)) {
+            throw new IllegalArgumentException(
+                    "Confidential clients using client secret authentication must have a client secret");
+        }
     }
 
     private void rejectBlankValues(Set<String> values, String valueName) {

@@ -3,13 +3,16 @@ package io.github.doubletree.iam.platform.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.doubletree.iam.platform.application.exception.ClientValidationException;
 import io.github.doubletree.iam.platform.application.exception.PasswordValidationException;
 import io.github.doubletree.iam.platform.application.exception.TenantBoundaryViolationException;
+import io.github.doubletree.iam.platform.application.result.ClientSecretResult;
 import io.github.doubletree.iam.platform.application.result.MfaEnrollmentResult;
 import io.github.doubletree.iam.platform.domain.AccountStatus;
 import io.github.doubletree.iam.platform.domain.AuditLog;
 import io.github.doubletree.iam.platform.domain.AuditActorType;
 import io.github.doubletree.iam.platform.domain.Client;
+import io.github.doubletree.iam.platform.domain.ClientStatus;
 import io.github.doubletree.iam.platform.domain.ClientType;
 import io.github.doubletree.iam.platform.domain.Group;
 import io.github.doubletree.iam.platform.domain.PasswordCredential;
@@ -29,6 +32,7 @@ import io.github.doubletree.iam.platform.repository.TotpCredentialRepository;
 import io.github.doubletree.iam.platform.repository.UserRepository;
 import io.github.doubletree.iam.platform.security.PasswordEncodingConfiguration;
 import io.github.doubletree.iam.platform.security.crypto.SecretEncryptionService;
+import io.github.doubletree.iam.platform.web.dto.ClientResponse;
 import io.github.doubletree.iam.platform.web.dto.UserResponse;
 import java.lang.reflect.RecordComponent;
 import java.time.Instant;
@@ -489,12 +493,142 @@ class ApplicationServiceTests {
     void createsClientUnderTenant() {
         Tenant tenant = tenantApplicationService.createTenant("Client Tenant");
 
-        Client client = clientApplicationService.createClient(tenant.getId(), "portal", "Portal");
+        ClientSecretResult result = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "portal",
+                "Portal",
+                ClientType.CONFIDENTIAL,
+                true,
+                true,
+                Set.of("https://portal.example.test/callback"),
+                Set.of("authorization_code"),
+                Set.of("iam.read"),
+                Set.of("client_secret_basic"));
 
-        Client loadedClient = clientRepository.findById(client.getId()).orElseThrow();
+        Client loadedClient = clientRepository.findById(result.client().getId()).orElseThrow();
         assertThat(loadedClient.getTenant().getId()).isEqualTo(tenant.getId());
         assertThat(loadedClient.getClientId()).isEqualTo("portal");
         assertThat(loadedClient.getClientName()).isEqualTo("Portal");
+        assertThat(loadedClient.getClientType()).isEqualTo(ClientType.CONFIDENTIAL);
+        assertThat(result.clientSecret()).isNotBlank();
+        assertThat(loadedClient.getClientSecretHash()).isNotBlank();
+        assertThat(loadedClient.getClientSecretHash()).isNotEqualTo(result.clientSecret());
+        assertThat(passwordEncoder.matches(result.clientSecret(), loadedClient.getClientSecretHash())).isTrue();
+        assertThat(ClientResponse.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .doesNotContain("clientSecret", "clientSecretHash");
+        assertThat(ClientResponse.from(loadedClient).toString())
+                .doesNotContain(result.clientSecret(), loadedClient.getClientSecretHash());
+    }
+
+    @Test
+    void createsPublicClientWithoutSecret() {
+        Tenant tenant = tenantApplicationService.createTenant("Public Client Tenant");
+
+        ClientSecretResult result = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "public-portal",
+                "Public Portal",
+                ClientType.PUBLIC,
+                true,
+                false,
+                Set.of("https://public.example.test/callback"),
+                Set.of("authorization_code"),
+                Set.of("openid", "profile"),
+                Set.of("none"));
+
+        Client loadedClient = clientRepository.findById(result.client().getId()).orElseThrow();
+        assertThat(result.clientSecret()).isNull();
+        assertThat(loadedClient.getClientType()).isEqualTo(ClientType.PUBLIC);
+        assertThat(loadedClient.getClientSecretHash()).isNull();
+        assertThat(loadedClient.isRequirePkce()).isTrue();
+        assertThat(loadedClient.getAuthenticationMethods()).containsExactly("none");
+    }
+
+    @Test
+    void updatesClientRegistrationSettings() {
+        Tenant tenant = tenantApplicationService.createTenant("Client Update Tenant");
+        Client client = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "managed-client",
+                "Managed Client",
+                ClientType.CONFIDENTIAL,
+                true,
+                true,
+                Set.of("https://client.example.test/callback"),
+                Set.of("authorization_code"),
+                Set.of("iam.read"),
+                Set.of("client_secret_basic"))
+                .client();
+
+        Client updatedClient = clientApplicationService.updateClient(
+                client.getId(),
+                "Managed Client Updated",
+                ClientStatus.DISABLED,
+                true,
+                false,
+                Set.of("https://client.example.test/updated-callback"),
+                Set.of("client_credentials"),
+                Set.of("iam.write"),
+                Set.of("client_secret_post"));
+
+        assertThat(updatedClient.getClientName()).isEqualTo("Managed Client Updated");
+        assertThat(updatedClient.getStatus()).isEqualTo(ClientStatus.DISABLED);
+        assertThat(updatedClient.isRequireConsent()).isFalse();
+        assertThat(updatedClient.getRedirectUris()).containsExactly("https://client.example.test/updated-callback");
+        assertThat(updatedClient.getGrantTypes()).containsExactly("client_credentials");
+        assertThat(updatedClient.getScopes()).containsExactly("iam.write");
+        assertThat(updatedClient.getAuthenticationMethods()).containsExactly("client_secret_post");
+        assertThat(auditLogRepository.findByAction("CLIENT_UPDATED"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(client.getId()));
+    }
+
+    @Test
+    void rotatingConfidentialClientSecretChangesStoredHash() {
+        Tenant tenant = tenantApplicationService.createTenant("Client Rotation Tenant");
+        ClientSecretResult created = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "rotation-client",
+                "Rotation Client",
+                ClientType.CONFIDENTIAL,
+                true,
+                true,
+                Set.of("https://rotation.example.test/callback"),
+                Set.of("authorization_code"),
+                Set.of("iam.read"),
+                Set.of("client_secret_basic"));
+        String originalHash = created.client().getClientSecretHash();
+
+        ClientSecretResult rotated = clientApplicationService.rotateClientSecret(created.client().getId());
+
+        assertThat(rotated.clientSecret()).isNotBlank().isNotEqualTo(created.clientSecret());
+        assertThat(rotated.client().getClientSecretHash()).isNotEqualTo(originalHash);
+        assertThat(passwordEncoder.matches(rotated.clientSecret(), rotated.client().getClientSecretHash())).isTrue();
+        assertThat(auditLogRepository.findByAction("CLIENT_SECRET_ROTATED"))
+                .singleElement()
+                .satisfies(auditLog -> assertThat(auditLog.getResourceId()).isEqualTo(created.client().getId()));
+    }
+
+    @Test
+    void rotatingPublicClientSecretIsRejected() {
+        Tenant tenant = tenantApplicationService.createTenant("Public Rotation Tenant");
+        Client publicClient = clientApplicationService.createClientWithSecret(
+                tenant.getId(),
+                "public-rotation-client",
+                "Public Rotation Client",
+                ClientType.PUBLIC,
+                true,
+                false,
+                Set.of("https://public-rotation.example.test/callback"),
+                Set.of("authorization_code"),
+                Set.of("openid"),
+                Set.of("none"))
+                .client();
+
+        assertThatThrownBy(() -> clientApplicationService.rotateClientSecret(publicClient.getId()))
+                .isInstanceOf(ClientValidationException.class)
+                .hasMessage("Public clients do not have client secrets");
     }
 
     @Test
@@ -508,37 +642,112 @@ class ApplicationServiceTests {
     @ValueSource(strings = {"", " "})
     void clientValidationRejectsBlankConfigurationValues(String blankValue) {
         Tenant tenant = tenantApplicationService.createTenant("Invalid Client Tenant " + blankValue.length());
-        Client client = Client.create(tenant, "invalid-client-" + blankValue.length(), "Invalid Client");
 
-        assertThatThrownBy(() -> client.setRedirectUris(Set.of(blankValue)))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "invalid-redirect-client-" + blankValue.length(),
+                        "Invalid Redirect Client",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        Set.of(blankValue),
+                        Set.of("authorization_code"),
+                        Set.of("iam.read"),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Client redirect URI must not be blank");
-        assertThatThrownBy(() -> client.setGrantTypes(Set.of(blankValue)))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "invalid-grant-client-" + blankValue.length(),
+                        "Invalid Grant Client",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        Set.of("https://invalid-grant.example.test/callback"),
+                        Set.of(blankValue),
+                        Set.of("iam.read"),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Client grant type must not be blank");
-        assertThatThrownBy(() -> client.setScopes(Set.of(blankValue)))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "invalid-scope-client-" + blankValue.length(),
+                        "Invalid Scope Client",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        Set.of("https://invalid-scope.example.test/callback"),
+                        Set.of("authorization_code"),
+                        Set.of(blankValue),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Client scope must not be blank");
-        assertThatThrownBy(() -> client.setAuthenticationMethods(Set.of(blankValue)))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "invalid-auth-client-" + blankValue.length(),
+                        "Invalid Auth Client",
+                        ClientType.CONFIDENTIAL,
+                        true,
+                        true,
+                        Set.of("https://invalid-auth.example.test/callback"),
+                        Set.of("authorization_code"),
+                        Set.of("iam.read"),
+                        Set.of(blankValue)))
+                .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Client authentication method must not be blank");
     }
 
     @Test
     void publicClientValidationRejectsSecretConfigurationAndMissingPkce() {
         Tenant tenant = tenantApplicationService.createTenant("Public Client Tenant");
-        Client client = Client.create(tenant, "public-client", "Public Client");
-        client.setClientType(ClientType.PUBLIC);
+        Client publicClientWithSecret = Client.create(tenant, "public-with-secret", "Public With Secret");
 
-        assertThatThrownBy(() -> client.setClientSecretHash("secret-hash"))
+        assertThatThrownBy(() -> {
+                    publicClientWithSecret.setClientType(ClientType.PUBLIC);
+                    publicClientWithSecret.setClientSecretHash("secret-hash");
+                })
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Public clients must not have a client secret");
-        assertThatThrownBy(() -> client.setRequirePkce(false))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "public-no-pkce",
+                        "Public No PKCE",
+                        ClientType.PUBLIC,
+                        false,
+                        false,
+                        Set.of("https://public-no-pkce.example.test/callback"),
+                        Set.of("authorization_code"),
+                        Set.of("openid"),
+                        Set.of("none")))
+                .isInstanceOf(ClientValidationException.class)
                 .hasMessage("Public clients must require PKCE");
+        assertThatThrownBy(() -> clientApplicationService.createClientWithSecret(
+                        tenant.getId(),
+                        "public-secret-auth",
+                        "Public Secret Auth",
+                        ClientType.PUBLIC,
+                        true,
+                        false,
+                        Set.of("https://public-secret-auth.example.test/callback"),
+                        Set.of("authorization_code"),
+                        Set.of("openid"),
+                        Set.of("client_secret_basic")))
+                .isInstanceOf(ClientValidationException.class)
+                .hasMessage("Public clients must not use client secret authentication");
+    }
+
+    @Test
+    void confidentialClientUsingSecretAuthenticationRequiresStoredSecretHash() {
+        Tenant tenant = tenantApplicationService.createTenant("Confidential Secret Boundary Tenant");
+        Client client = Client.create(tenant, "confidential-no-secret", "Confidential No Secret");
+        client.setRedirectUris(Set.of("https://confidential-no-secret.example.test/callback"));
+        client.setGrantTypes(Set.of("authorization_code"));
+        client.setScopes(Set.of("iam.read"));
+        client.setAuthenticationMethods(Set.of("client_secret_basic"));
+
         assertThatThrownBy(client::validateRegistration)
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Public clients must not use client secret authentication");
+                .hasMessage("Confidential clients using client secret authentication must have a client secret");
     }
 
     @Test
